@@ -5,6 +5,7 @@ import {
   ImageBackground,
   useWindowDimensions,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,7 +19,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
-import beachImage from "../assets/meditation-images/bg-restaurant.jpg";
+import beachImage from "../assets/bg/StartScreen.jpg";
 import { NativeWindStyleSheet } from "nativewind";
 
 NativeWindStyleSheet.setOutput({
@@ -44,7 +45,7 @@ const App = () => {
       >
         <AppGradient
           // Background Linear Gradient
-          colors={["rgba(0,0,0,0.4)", "rgba(0,0,0,0.8)"]}
+          colors={["#ffffff00", "#ffffff00"]}
         >
           <SafeAreaView className="flex flex-1 px-1 justify-between">
             <Animated.View
@@ -52,14 +53,7 @@ const App = () => {
                 .mass(0.5)
                 .stiffness(80)
                 .springify(20)}
-            >
-              <Text className="text-center text-white font-bold text-4xl">
-                Nhà Hàng LOGO Xin Kinh Chào Quý Khách!
-              </Text>
-              <Text className="text-center text-white font-regular text-2xl mt-3">
-                Đến đây để thưởng thức những điều tuyệt vời nhất
-              </Text>
-            </Animated.View>
+            ></Animated.View>
 
             <Animated.View
               entering={FadeInDown.delay(300)
@@ -67,10 +61,19 @@ const App = () => {
                 .stiffness(80)
                 .springify(20)}
             >
-              <CustomButton
-                onPress={() => router.push("/home-screen")}
-                title="BẮT ĐẦU KHÁM PHÁ"
-              />
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className={`bg-[#9A0E1D] mb-10 rounded-xl min-h-[62px] justify-center items-center `}
+                onPress={() => router.push("/(auths)/login")}
+              >
+                <Text className={`text-white font-semibold text-xl uppercase`}>
+                  ĐĂNG NHẬP{" "}
+                </Text>
+              </TouchableOpacity>
+              {/* <CustomButton
+                onPress={() => router.push("/(auths)/login")}
+                title="ĐĂNG NHẬP"
+              /> */}
             </Animated.View>
 
             <StatusBar style="light" />
