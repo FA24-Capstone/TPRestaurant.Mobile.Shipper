@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { OrderItemProps } from "@/app/types/order_type";
 import { Checkbox } from "react-native-paper";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
 const getStatusTextAndColor = (status: string) => {
@@ -21,6 +22,11 @@ const getStatusTextAndColor = (status: string) => {
   }
 };
 
+// Define the types for navigation routes
+type RootStackParamList = {
+  OrderDetail: undefined;
+};
+
 const OrderItem: React.FC<OrderItemProps> = ({
   order,
   selected,
@@ -28,6 +34,8 @@ const OrderItem: React.FC<OrderItemProps> = ({
   isPending,
   onViewDetail,
 }) => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
   const router = useRouter();
   // Giới hạn địa chỉ thành 1 dòng (khoảng 40 ký tự)
   const maxLength = 40;
@@ -42,8 +50,14 @@ const OrderItem: React.FC<OrderItemProps> = ({
   );
 
   const handleViewDetail = () => {
-    console.log("View detail button pressed!");
-    router.push("order-detail");
+    if (onViewDetail) {
+      router.push("/order-detail");
+      console.log("View detail route");
+    } else {
+      console.log("View detail navigation");
+
+      navigation.navigate("OrderDetail");
+    }
   };
 
   return (
@@ -93,7 +107,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
           <View className="flex-row justify-between">
             <TouchableOpacity
               className="bg-gray-200 w-[45%] py-2 px-4 rounded-lg"
-              onPress={onViewDetail}
+              onPress={handleViewDetail}
             >
               <Text className="text-lg text-center text-gray-600 font-semibold uppercase">
                 Xem

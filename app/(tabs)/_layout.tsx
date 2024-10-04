@@ -1,39 +1,73 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform, StyleSheet } from "react-native";
 import Colors from "@/constants/Colors";
-import OrderDetail from "./order-detail";
 import CustomHeaderDetail from "@/components/CustomHeaderDetail";
 import { SafeAreaView } from "react-native-safe-area-context";
+import OptimizeDelivery from "./optimize-delivery";
+import OrderDetail from "./order-detail";
+import OrderListDelivery from "./order-list";
+import OrderUpload from "@/components/Pages/Order/OrderUpload";
+import OrderUploaded from "./order-upload";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator(); // Stack for detailed screens
+
+const OrderStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="OrderListDelivery"
+        component={OrderListDelivery}
+        options={{ headerShown: false }} // Hide header for order list
+      />
+      <Stack.Screen
+        name="OrderDetail"
+        component={OrderDetail}
+        options={{
+          header: () => <CustomHeaderDetail title="Chi tiết đơn hàng" />,
+        }}
+      />
+      <Stack.Screen
+        name="OptimizeDelivery"
+        component={OptimizeDelivery}
+        options={{
+          header: () => <CustomHeaderDetail title="Tối ưu chặng đường" />,
+        }}
+      />
+      <Stack.Screen
+        name="OrderUpload"
+        component={OrderUpload}
+        options={{
+          header: () => <CustomHeaderDetail title="Chụp ảnh hoàn thành" />,
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
 
 const Page = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Tab.Navigator
         screenOptions={{
-          headerShown: false, // Hide the header for each tab
-          tabBarActiveTintColor: Colors.primary, // Active tab color
-          tabBarInactiveTintColor: Colors.grey, // Inactive tab color (optional)
+          headerShown: false,
+          tabBarActiveTintColor: Colors.primary,
           tabBarLabelStyle: {
             fontSize: 14,
-            marginBottom: Platform.OS === "ios" ? 6 : 5, // Increased margin for iOS
+            marginBottom: Platform.OS === "ios" ? 6 : 5,
           },
           tabBarStyle: {
-            height: Platform.OS === "ios" ? 90 : 70, // Increased height for iOS
-            paddingBottom: Platform.OS === "ios" ? 20 : 10, // Increased padding for iOS
-            paddingTop: 10, // Optional: Adjust paddingTop if needed
-            // Optional: Add shadow for iOS
+            height: Platform.OS === "ios" ? 90 : 70,
+            paddingBottom: Platform.OS === "ios" ? 20 : 10,
+            paddingTop: 10,
             shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: -2,
-            },
+            shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.1,
             shadowRadius: 4,
-            elevation: 5, // Adds shadow on Android
+            elevation: 5,
           },
         }}
       >
@@ -53,13 +87,13 @@ const Page = () => {
         />
         <Tab.Screen
           name="order-list"
-          component={require("./order-list").default}
+          component={OrderStack} // Use the stack navigator for orders
           options={{
             tabBarLabel: "Đơn giao",
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons
                 name="truck-fast"
-                size={Platform.OS === "ios" ? 24 : 28} // Reduced size for iOS
+                size={Platform.OS === "ios" ? 24 : 28}
                 color={color}
               />
             ),
@@ -93,7 +127,7 @@ const Page = () => {
             ),
           }}
         />
-        {/* Add order-detail as a screen but hide it from the tab bar */}
+
         <Tab.Screen
           name="order-detail"
           component={OrderDetail}
@@ -101,6 +135,17 @@ const Page = () => {
             tabBarButton: () => null, // Hide this screen from the tab bar
             headerShown: true, // Show header for this screen
             header: () => <CustomHeaderDetail title="Chi tiết đơn hàng" />, // Custom header
+            tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
+          }}
+        />
+
+        <Tab.Screen
+          name="order-upload"
+          component={OrderUploaded}
+          options={{
+            tabBarButton: () => null, // Hide this screen from the tab bar
+            headerShown: true, // Show header for this screen
+            header: () => <CustomHeaderDetail title="Chụp ảnh hoàn thành" />, // Custom header
             tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
           }}
         />

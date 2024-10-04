@@ -11,5 +11,5 @@ export interface OrderItemProps {
   selected: boolean;
   onSelect: (orderId: string) => void;
   isPending?: boolean;
-  onViewDetail: () => void;
+  onViewDetail?: () => void;
 }

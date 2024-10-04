@@ -10,12 +10,19 @@ import {
 import { TabView, SceneMap } from "react-native-tab-view";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
-import { useRouter } from "expo-router";
+import { useNavigation } from "expo-router";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
+// Define the types for navigation routes
+type RootStackParamList = {
+  OptimizeDelivery: undefined;
+  OrderDetail: undefined;
+};
+
 const OrderListDelivery: React.FC = () => {
-  const router = useRouter();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
@@ -99,7 +106,6 @@ const OrderListDelivery: React.FC = () => {
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={true}
-      onViewDetail={() => router.push("/order-detail")}
     />
   );
 
@@ -109,7 +115,6 @@ const OrderListDelivery: React.FC = () => {
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
-      onViewDetail={() => router.push("/order-detail")}
     />
   );
 
@@ -119,7 +124,6 @@ const OrderListDelivery: React.FC = () => {
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
-      onViewDetail={() => router.push("/order-detail")}
     />
   );
 
@@ -129,7 +133,6 @@ const OrderListDelivery: React.FC = () => {
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
-      onViewDetail={() => router.push("/order-detail")}
     />
   );
 
@@ -195,7 +198,10 @@ const OrderListDelivery: React.FC = () => {
       />
       {/* Show optimization button if two or more orders are selected */}
       {selectedOrders.length >= 2 && (
-        <TouchableOpacity className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4">
+        <TouchableOpacity
+          className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
+          onPress={() => navigation.navigate("OptimizeDelivery")}
+        >
           <Text className="text-[#A1011A] text-center font-semibold text-lg">
             Tối ưu chặng đường
           </Text>
@@ -316,12 +322,15 @@ const OrderListDelivery: React.FC = () => {
           selectedOrders={selectedOrders}
           onSelectOrder={handleSelectOrder}
           isPending={selectedStatus === "pending"}
-          onViewDetail={() => router.push("/order-detail")}
+          onViewDetail={() => navigation.navigate("OrderDetail")}
         />
 
         {/* Show optimization button if two or more orders are selected */}
         {selectedOrders.length >= 2 && (
-          <TouchableOpacity className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4">
+          <TouchableOpacity
+            className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
+            onPress={() => navigation.navigate("OptimizeDelivery")}
+          >
             <Text className="text-[#A1011A] text-center font-semibold text-lg">
               Tối ưu chặng đường
             </Text>
