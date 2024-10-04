@@ -17,7 +17,7 @@ const CustomHeaderDetail: React.FC<CustomHeaderDetailProps> = ({ title }) => {
         alignItems: "center",
         paddingHorizontal: 20,
         backgroundColor: "#fff",
-        paddingTop: 40,
+        paddingTop: 20,
         paddingBottom: 20,
         justifyContent: "space-between",
         shadowColor: "#000",
