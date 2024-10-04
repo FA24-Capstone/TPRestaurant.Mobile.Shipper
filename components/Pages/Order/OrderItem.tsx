@@ -47,17 +47,18 @@ const OrderItem: React.FC<OrderItemProps> = ({
   };
 
   return (
-    <View className=" mt-2 flex-row items-center">
+    <View className=" mt-4 flex-row items-center">
       {/* Checkbox để chọn đơn */}
       {isPending && (
         <Checkbox
           status={selected ? "checked" : "unchecked"}
           onPress={() => onSelect(order.id)}
           color="#A1011A"
+          uncheckedColor="gray"
         />
       )}
       <View
-        className={`bg-[#FAFAFA] p-4 rounded-lg shadow ${
+        className={`bg-[#FAFAFA] p-3 rounded-lg shadow ${
           isPending ? "w-[90%]" : "w-full"
         }`}
       >

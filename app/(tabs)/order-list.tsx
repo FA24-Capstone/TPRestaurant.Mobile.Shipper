@@ -1,14 +1,30 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { TabView, SceneMap } from "react-native-tab-view";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+
+const initialLayout = { width: Dimensions.get("window").width };
 
 const OrderListDelivery: React.FC = () => {
   const router = useRouter();
 
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([]); // Quản lý danh sách các đơn đã chọn
-  const [selectedStatus, setSelectedStatus] = useState("pending");
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: "pending", title: "Chờ giao" },
+    { key: "delivering", title: "Đang giao" },
+    { key: "delivered", title: "Đã giao" },
+    { key: "cancelled", title: "Đã hủy" },
+  ]);
 
   const orders = [
     {
@@ -62,119 +78,122 @@ const OrderListDelivery: React.FC = () => {
     },
   ];
 
-  // Lọc danh sách đơn hàng theo trạng thái được chọn
-  const filteredOrders = orders.filter(
-    (order) => order.status === selectedStatus
-  );
+  // Filter orders based on their status
+  const filterOrders = (status: string) =>
+    orders.filter((order) => order.status === status);
 
-  // Tạo tiêu đề động dựa trên trạng thái
-  const getTitle = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "Danh sách đơn cần giao";
-      case "delivering":
-        return "Danh sách đơn đang giao";
-      case "delivered":
-        return "Danh sách đơn đã giao";
-      case "cancelled":
-        return "Danh sách đơn đã hủy";
-      default:
-        return "Danh sách đơn hàng";
-    }
-  };
-
-  // Hàm để xử lý chọn / bỏ chọn một đơn hàng
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {
-      if (prevSelectedOrders.includes(orderId)) {
-        return prevSelectedOrders.filter((id) => id !== orderId); // Bỏ chọn đơn hàng nếu đã được chọn
-      } else {
-        return [...prevSelectedOrders, orderId]; // Thêm đơn hàng vào danh sách chọn
-      }
+      const updatedOrders = prevSelectedOrders.includes(orderId)
+        ? prevSelectedOrders.filter((id) => id !== orderId)
+        : [...prevSelectedOrders, orderId];
+      console.log("Selected Orders:", updatedOrders); // For debugging
+      return updatedOrders;
     });
   };
 
-  return (
-    <View className="flex-1 bg-white mt-10">
-      <WelcomeHeader />
-      {/* Nút tabs cho các trạng thái */}
-      <View className="flex-row justify-around mx-4 my-4">
-        <TouchableOpacity
-          className={`py-2 px-4 rounded-lg ${
-            selectedStatus === "pending" ? "bg-[#A1011A]" : "bg-gray-200"
-          }`}
-          onPress={() => setSelectedStatus("pending")}
-        >
-          <Text
-            className={`text-center font-semibold text-base ${
-              selectedStatus === "pending" ? "text-white" : "text-gray-700"
-            }`}
-          >
-            Chờ giao
-          </Text>
-        </TouchableOpacity>
+  // Define each tab's content for react-native-tab-view
+  const PendingRoute = () => (
+    <OrderList
+      orders={filterOrders("pending")}
+      selectedOrders={selectedOrders}
+      onSelectOrder={handleSelectOrder}
+      isPending={true}
+      onViewDetail={() => router.push("/order-detail")}
+    />
+  );
 
-        <TouchableOpacity
-          className={`py-2 px-4 rounded-lg ${
-            selectedStatus === "delivering" ? "bg-[#A1011A]" : "bg-gray-200"
-          }`}
-          onPress={() => setSelectedStatus("delivering")}
-        >
-          <Text
-            className={`text-center font-semibold text-base ${
-              selectedStatus === "delivering" ? "text-white" : "text-gray-700"
-            }`}
-          >
-            Đang giao
-          </Text>
-        </TouchableOpacity>
+  const DeliveringRoute = () => (
+    <OrderList
+      orders={filterOrders("delivering")}
+      selectedOrders={selectedOrders}
+      onSelectOrder={handleSelectOrder}
+      isPending={false}
+      onViewDetail={() => router.push("/order-detail")}
+    />
+  );
 
-        <TouchableOpacity
-          className={`py-2 px-4 rounded-lg ${
-            selectedStatus === "delivered" ? "bg-[#A1011A]" : "bg-gray-200"
-          }`}
-          onPress={() => setSelectedStatus("delivered")}
-        >
-          <Text
-            className={`text-center font-semibold text-base ${
-              selectedStatus === "delivered" ? "text-white" : "text-gray-700"
-            }`}
-          >
-            Đã giao
-          </Text>
-        </TouchableOpacity>
+  const DeliveredRoute = () => (
+    <OrderList
+      orders={filterOrders("delivered")}
+      selectedOrders={selectedOrders}
+      onSelectOrder={handleSelectOrder}
+      isPending={false}
+      onViewDetail={() => router.push("/order-detail")}
+    />
+  );
 
-        <TouchableOpacity
-          className={`py-2 px-4 rounded-lg ${
-            selectedStatus === "cancelled" ? "bg-[#A1011A]" : "bg-gray-200"
-          }`}
-          onPress={() => setSelectedStatus("cancelled")}
-        >
-          <Text
-            className={`text-center font-semibold text-base ${
-              selectedStatus === "cancelled" ? "text-white" : "text-gray-700"
-            }`}
-          >
-            Đã huỷ
-          </Text>
-        </TouchableOpacity>
-      </View>
+  const CancelledRoute = () => (
+    <OrderList
+      orders={filterOrders("cancelled")}
+      selectedOrders={selectedOrders}
+      onSelectOrder={handleSelectOrder}
+      isPending={false}
+      onViewDetail={() => router.push("/order-detail")}
+    />
+  );
 
-      {/* Tiêu đề động dựa trên trạng thái */}
-      <Text className="font-semibold uppercase text-xl mt-2 mx-4">
-        {getTitle(selectedStatus)}
-      </Text>
+  // Scene mapping for the TabView
+  const renderScene = SceneMap({
+    pending: PendingRoute,
+    delivering: DeliveringRoute,
+    delivered: DeliveredRoute,
+    cancelled: CancelledRoute,
+  });
 
-      {/* Danh sách đơn */}
-      <OrderList
-        orders={filteredOrders}
-        selectedOrders={selectedOrders}
-        onSelectOrder={handleSelectOrder}
-        isPending={selectedStatus === "pending"}
-        onViewDetail={() => router.push("/order-detail")}
+  // Function to render TabView (for non-iOS platforms)
+  const renderTabView = () => (
+    <View style={{ flex: 1 }}>
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={initialLayout}
+        renderTabBar={({ navigationState, jumpTo }) => (
+          <View className="flex-row mx-4 my-4">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {navigationState.routes.map(
+                (
+                  route: {
+                    key: React.Key | null | undefined;
+                    title:
+                      | string
+                      | number
+                      | boolean
+                      | React.ReactElement<
+                          any,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | null
+                      | undefined;
+                  },
+                  i: number
+                ) => (
+                  <View key={route.key} className="flex-row space-x-4">
+                    <TouchableOpacity
+                      onPress={() => route.key && jumpTo(route.key as string)}
+                      className={`py-2 mr-3 px-4 rounded-lg ${
+                        i === index ? "bg-[#A1011A]" : "bg-gray-200"
+                      }`}
+                    >
+                      <Text
+                        className={`text-center font-semibold text-base ${
+                          i === index ? "text-white" : "text-gray-700"
+                        }`}
+                      >
+                        {route.title}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              )}
+            </ScrollView>
+          </View>
+        )}
       />
-
-      {/* Hiển thị nút "Tối ưu chặng đường" khi có từ 2 đơn hàng được chọn */}
+      {/* Show optimization button if two or more orders are selected */}
       {selectedOrders.length >= 2 && (
         <TouchableOpacity className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4">
           <Text className="text-[#A1011A] text-center font-semibold text-lg">
@@ -182,6 +201,140 @@ const OrderListDelivery: React.FC = () => {
           </Text>
         </TouchableOpacity>
       )}
+    </View>
+  );
+
+  // Function to render ScrollView Tabs (for iOS)
+  const renderScrollViewTabs = () => {
+    const [selectedStatus, setSelectedStatus] = useState("pending");
+
+    const filteredOrders = filterOrders(selectedStatus);
+
+    const getTitle = (status: string) => {
+      switch (status) {
+        case "pending":
+          return "Danh sách đơn cần giao";
+        case "delivering":
+          return "Danh sách đơn đang giao";
+        case "delivered":
+          return "Danh sách đơn đã giao";
+        case "cancelled":
+          return "Danh sách đơn đã hủy";
+        default:
+          return "Danh sách đơn hàng";
+      }
+    };
+
+    return (
+      <>
+        {/* Tabs with ScrollView */}
+        <View className="flex-row mx-4 my-4">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View className="flex-row space-x-4">
+              <TouchableOpacity
+                className={`py-2 px-4 rounded-lg ${
+                  selectedStatus === "pending" ? "bg-[#A1011A]" : "bg-gray-200"
+                }`}
+                onPress={() => setSelectedStatus("pending")}
+              >
+                <Text
+                  className={`text-center font-semibold text-base ${
+                    selectedStatus === "pending"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Chờ giao
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`py-2 px-4 rounded-lg ${
+                  selectedStatus === "delivering"
+                    ? "bg-[#A1011A]"
+                    : "bg-gray-200"
+                }`}
+                onPress={() => setSelectedStatus("delivering")}
+              >
+                <Text
+                  className={`text-center font-semibold text-base ${
+                    selectedStatus === "delivering"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Đang giao
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`py-2 px-4 rounded-lg ${
+                  selectedStatus === "delivered"
+                    ? "bg-[#A1011A]"
+                    : "bg-gray-200"
+                }`}
+                onPress={() => setSelectedStatus("delivered")}
+              >
+                <Text
+                  className={`text-center font-semibold text-base ${
+                    selectedStatus === "delivered"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Đã giao
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`py-2 px-4 rounded-lg ${
+                  selectedStatus === "cancelled"
+                    ? "bg-[#A1011A]"
+                    : "bg-gray-200"
+                }`}
+                onPress={() => setSelectedStatus("cancelled")}
+              >
+                <Text
+                  className={`text-center font-semibold text-base ${
+                    selectedStatus === "cancelled"
+                      ? "text-white"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Đã huỷ
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Dynamic title based on status */}
+        <Text className="font-semibold uppercase text-xl mt-2 mx-4">
+          {getTitle(selectedStatus)}
+        </Text>
+
+        {/* Order list */}
+        <OrderList
+          orders={filteredOrders}
+          selectedOrders={selectedOrders}
+          onSelectOrder={handleSelectOrder}
+          isPending={selectedStatus === "pending"}
+          onViewDetail={() => router.push("/order-detail")}
+        />
+
+        {/* Show optimization button if two or more orders are selected */}
+        {selectedOrders.length >= 2 && (
+          <TouchableOpacity className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4">
+            <Text className="text-[#A1011A] text-center font-semibold text-lg">
+              Tối ưu chặng đường
+            </Text>
+          </TouchableOpacity>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <View className="flex-1 bg-white ">
+      <WelcomeHeader />
+      {Platform.OS === "ios" ? renderScrollViewTabs() : renderTabView()}
     </View>
   );
 };
