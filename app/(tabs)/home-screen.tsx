@@ -75,28 +75,30 @@ const HomeScreen = () => {
   };
 
   return (
-    <View className="bg-white flex-1 mt-10">
+    <View className="bg-white flex-1 ">
       <WelcomeHeader />
       <OrderSummary
         completedOrders={fakeData.completedOrders}
         pendingOrders={fakeData.pendingOrders}
       />
-      <OrderChart chartData={fakeData.chartData} />
-      {/* Truyền limit={2} để giới hạn số đơn hiển thị */}
-      <View className="flex-row justify-between mx-6">
-        <Text className="font-semibold text-lg">Danh sách đơn cần giao</Text>
-        {/* Thêm sự kiện nhấn vào "Tất cả" */}
-        <TouchableOpacity onPress={() => router.push("/order-list")}>
-          <Text className="font-semibold text-base italic text-[#9A0E1D]">
-            Tất cả
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <OrderList
-        orders={fakeData.orders}
-        limit={2}
-        onViewDetail={() => router.push("/order-detail")}
-      />
+      <ScrollView className="flex-1">
+        <OrderChart chartData={fakeData.chartData} />
+        {/* Truyền limit={2} để giới hạn số đơn hiển thị */}
+        <View className="flex-row justify-between mx-6">
+          <Text className="font-semibold text-lg">Danh sách đơn cần giao</Text>
+          {/* Thêm sự kiện nhấn vào "Tất cả" */}
+          <TouchableOpacity onPress={() => router.push("/order-list")}>
+            <Text className="font-semibold text-base italic text-[#9A0E1D]">
+              Tất cả
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <OrderList
+          orders={fakeData.orders}
+          limit={2}
+          onViewDetail={() => router.push("/order-detail")}
+        />
+      </ScrollView>
     </View>
   );
 };

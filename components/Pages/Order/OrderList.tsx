@@ -24,7 +24,7 @@ const OrderList: React.FC<OrderListProps> = ({
   const displayedOrders = limit ? orders.slice(0, limit) : orders;
 
   return (
-    <ScrollView className="p-4">
+    <ScrollView className="px-2 ">
       {displayedOrders.map((order, index) => (
         <OrderItem
           key={order.id}

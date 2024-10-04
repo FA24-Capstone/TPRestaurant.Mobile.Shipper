@@ -17,8 +17,7 @@ const LineDelivery: React.FC = () => {
 
       <View className="p-4 border-2 border-zinc-200 rounded-md">
         <Text className="text-gray-600 ">
-          <Text className="font-semibold text-gray-800">11:00 AM,</Text>
-          {""}
+          <Text className="font-semibold text-gray-800">11:00 AM,</Text> {""}
           27/09/2024 (Hôm nay)
         </Text>
         <View className="flex-row mt-2 items-center  my-3">
