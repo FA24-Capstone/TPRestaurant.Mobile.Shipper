@@ -1,8 +1,13 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Order } from "@/app/types/order_type";
 
-const OrderSummary: React.FC = () => {
+interface OrderSummaryProps {
+  orderData: Order;
+}
+
+const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
   return (
     <View className="mb-4">
       <View className="flex-row justify-between">
@@ -12,7 +17,7 @@ const OrderSummary: React.FC = () => {
         <View className="flex-row items-center">
           <MaterialIcons name="call" size={18} color="green" className="ml-2" />
           <Text className="text-lg text-gray-700  font-bold ml-3">
-            0912 345 678
+            +84 {orderData?.account?.phoneNumber}{" "}
           </Text>
         </View>
       </View>
@@ -21,7 +26,7 @@ const OrderSummary: React.FC = () => {
         <Text className="text-gray-600 text-base  font-medium">Ghi chú</Text>
 
         <Text className="text-gray-800 font-semibold text-base">
-          Ít cay, ship sớm
+          {orderData.note || "Không có ghi chú"}
         </Text>
       </View>
 
@@ -33,12 +38,21 @@ const OrderSummary: React.FC = () => {
         <Text className="text-red-600 font-bold text-base font-medium">
           Tổng tiền
         </Text>
-        <Text className="text-red-600 font-bold  text-base">350.000 VND</Text>
+        <Text className="text-red-600 font-bold  text-base">
+          {orderData.totalAmount.toLocaleString("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          })}
+        </Text>
       </View>
       <View className="flex-row justify-between mt-2">
         <Text className="text-gray-600 text-base font-medium">Phương thức</Text>
-        <Text className="text-green-600 uppercase text-base font-semibold">
-          Đã chuyển khoản
+        <Text
+          className={`${
+            orderData.deposit === null ? "text-yellow-600" : "text-green-600"
+          } uppercase text-base font-bold`}
+        >
+          {orderData.deposit === null ? "Chưa thanh toán" : "Đã chuyển khoản"}
         </Text>
       </View>
     </View>

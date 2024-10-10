@@ -7,15 +7,16 @@ import { useNavigation, useRouter } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
-const getStatusTextAndColor = (status: string) => {
+const getStatusTextAndColor = (status: number) => {
   switch (status) {
-    case "pending":
+    case 4:
+      // 7
       return { text: "Chờ giao hàng", color: "#FFA500" }; // Màu cam cho "Chờ giao hàng"
-    case "delivering":
+    case 8:
       return { text: "Đang giao hàng", color: "#00BFFF" }; // Màu xanh dương cho "Đang giao hàng"
-    case "delivered":
+    case 9:
       return { text: "Đã giao hàng", color: "#32CD32" }; // Màu xanh lá cho "Đã giao hàng"
-    case "cancelled":
+    case 10:
       return { text: "Đã hủy", color: "#FF0000" }; // Màu đỏ cho "Đã hủy"
     default:
       return { text: "Trạng thái không xác định", color: "#000000" }; // Màu đen cho trạng thái không xác định
@@ -24,7 +25,7 @@ const getStatusTextAndColor = (status: string) => {
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderDetail: undefined;
+  OrderDetail: { orderId: string };
 };
 
 const OrderItem: React.FC<OrderItemProps> = ({
@@ -36,27 +37,29 @@ const OrderItem: React.FC<OrderItemProps> = ({
 }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
+  console.log("OrderItemNE", JSON.stringify(order));
+
   const router = useRouter();
   // Giới hạn địa chỉ thành 1 dòng (khoảng 40 ký tự)
   const maxLength = 40;
   const truncatedAddress =
-    order.address.length > maxLength
+    order?.address?.length > maxLength
       ? order.address.slice(0, maxLength) + "..."
       : order.address;
 
   // Lấy text và màu từ hàm getStatusTextAndColor
   const { text: statusText, color: statusColor } = getStatusTextAndColor(
-    order.status
+    order.status.id
   );
 
   const handleViewDetail = () => {
     if (onViewDetail) {
-      router.push("/order-detail");
+      onViewDetail(order.orderId);
       console.log("View detail route");
     } else {
       console.log("View detail navigation");
 
-      navigation.navigate("OrderDetail");
+      navigation.navigate("OrderDetail", { orderId: order.orderId });
     }
   };
 
@@ -78,11 +81,14 @@ const OrderItem: React.FC<OrderItemProps> = ({
       >
         <View className="flex-1 ">
           <View className="flex-row justify-between items-center">
-            <Text className="font-bold text-lg " style={{ color: statusColor }}>
-              {order.id} - {statusText}
+            <Text
+              className="font-bold text-lg w-[90%]"
+              style={{ color: statusColor }}
+            >
+              #{order.orderId.slice(0, 8)} - {statusText}
             </Text>
             <Text className="text-gray-700 font-semibold text-lg ">
-              {order.time}
+              {order.deliveryTime || 0} phút
             </Text>
           </View>
           <View className=" my-2 flex-row">
@@ -97,10 +103,12 @@ const OrderItem: React.FC<OrderItemProps> = ({
                   size={20}
                   color="green"
                 />
-                <Text className="text-gray-600">({order.distance})</Text>
+                <Text className="text-gray-600">
+                  ({order.distance || 0} km)
+                </Text>
               </View>
               <Text className="ml-2 text-gray-700 font-medium">
-                {truncatedAddress}
+                {order.account.address}
               </Text>
             </View>
           </View>

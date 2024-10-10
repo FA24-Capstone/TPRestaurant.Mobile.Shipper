@@ -1,14 +1,21 @@
 import React from "react";
 import { View, Text, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Order } from "@/app/types/order_type";
 
-const LineDelivery: React.FC = () => {
+interface LineDeliveryProps {
+  orderData: Order;
+}
+const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
   return (
     <View className="mb-4">
       <View className="flex-row justify-between">
         <Text className="font-medium text-lg text-gray-700 mb-4">
           Mã đơn Order:
-          <Text className="text-[#C01D2E] font-semibold"> #351</Text>
+          <Text className="text-[#C01D2E] font-semibold">
+            {" "}
+            #{orderData.orderId.slice(0, 8)}
+          </Text>
         </Text>
         <Text className="text-blue-500  text-lg italic font-medium">
           Xem bản đồ
@@ -21,7 +28,9 @@ const LineDelivery: React.FC = () => {
           27/09/2024 (Hôm nay)
         </Text>
         <View className="flex-row mt-2 items-center  my-3">
-          <Text className=" my-1 text-red-500 font-bold text-lg">20p</Text>
+          <Text className=" my-1 text-red-500 font-bold text-lg">
+            {orderData.deliveryTime || 0} phút
+          </Text>
           <View className="ml-4">
             <Image
               source={require("../../../../assets/icon/lineplace.png")}
@@ -39,7 +48,7 @@ const LineDelivery: React.FC = () => {
 
             <Text className=" text-gray-400 font-semibold mt-6">Đến</Text>
             <Text className=" text-gray-700 text-base font-semibold">
-              S6.06 Vinhomes Grand Park, TP Thủ Đức, TP Hồ Chí Minh
+              {orderData.account.address}
             </Text>
           </View>
         </View>

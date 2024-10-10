@@ -1,33 +1,62 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// Define a type for the slice state
 interface AuthState {
-  isAuthenticated: boolean;
-  user: string | null;
+  isLoggedIn: boolean;
+  token: string | null;
+  deviceId: string | null;
+  deviceCode: string | null;
+  tableId: string | null;
+  tableName: string | null;
+  mainRole: string | null; // Thêm thuộc tính này để giữ mainRole
 }
 
-// Define the initial state using that type
 const initialState: AuthState = {
-  isAuthenticated: false,
-  user: null,
+  isLoggedIn: false,
+  token: null,
+  deviceId: null,
+  deviceCode: null,
+  tableId: null,
+  tableName: null,
+  mainRole: null,
 };
 
-export const authSlice = createSlice({
+const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<string>) => {
-      state.isAuthenticated = true;
-      state.user = action.payload; // Assume payload is the username
+    login(
+      state,
+      action: PayloadAction<{
+        token: string;
+        deviceResponse: {
+          deviceId: string;
+          deviceCode: string;
+          tableId: string;
+          tableName: string;
+          mainRole: string;
+        };
+      }>
+    ) {
+      state.isLoggedIn = true;
+      state.token = action.payload.token;
+      state.deviceId = action.payload.deviceResponse.deviceId;
+      state.deviceCode = action.payload.deviceResponse.deviceCode;
+      state.tableId = action.payload.deviceResponse.tableId;
+      state.tableName = action.payload.deviceResponse.tableName;
+      state.mainRole = action.payload.deviceResponse.mainRole;
     },
-    logout: (state) => {
-      state.isAuthenticated = false;
-      state.user = null;
+    logout(state) {
+      state.isLoggedIn = false;
+      state.token = null;
+      state.deviceId = null;
+      state.deviceCode = null;
+      state.tableId = null;
+      state.tableName = null;
+      state.mainRole = null;
     },
   },
 });
 
-// Action creators are generated for each case reducer function
 export const { login, logout } = authSlice.actions;
 
 export default authSlice.reducer;
