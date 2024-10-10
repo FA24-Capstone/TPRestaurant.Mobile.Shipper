@@ -8,7 +8,11 @@ type RootStackParamList = {
   OrderUpload: undefined;
 };
 
-const OrderActions: React.FC = () => {
+interface OrderActionsProps {
+  orderId: string;
+}
+
+const OrderActions: React.FC<OrderActionsProps> = ({ orderId }) => {
   const router = useRouter();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const handleDelivered = () => {

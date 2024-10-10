@@ -93,11 +93,11 @@ const HomeScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-        <OrderList
+        {/* <OrderList
           orders={fakeData.orders}
           limit={2}
           onViewDetail={() => router.push("/order-detail")}
-        />
+        /> */}
       </ScrollView>
     </View>
   );

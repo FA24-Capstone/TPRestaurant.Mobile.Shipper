@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,34 @@ import {
   Dimensions,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { TabView, SceneMap } from "react-native-tab-view";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
 import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
+import {
+  GetAllOrdersByStatusParams,
+  GetAllOrdersByStatusResponse,
+  Order,
+} from "../types/order_type";
+import { getAllOrdersByStatus } from "@/api/orderApi";
+import { showErrorMessage } from "@/components/FlashMessageHelpers";
+import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
 // Define the types for navigation routes
 type RootStackParamList = {
   OptimizeDelivery: undefined;
-  OrderDetail: undefined;
+  OrderDetail: { orderId: string };
+};
+
+const statusMapping: { [key: string]: 4 | 6 } = {
+  pending: 4, // Assuming "pending" corresponds to statusId 4
+  delivering: 6, // Assuming "delivering" corresponds to statusId 6
+  // Bạn có thể thêm các mapping khác nếu cần
 };
 
 const OrderListDelivery: React.FC = () => {
@@ -33,61 +48,73 @@ const OrderListDelivery: React.FC = () => {
     { key: "cancelled", title: "Đã hủy" },
   ]);
 
-  const orders = [
-    {
-      id: "#351",
-      distance: "5km",
-      address: "S6.03, Vinhomes Grand Park, TP. Thủ Đức, TP. Hồ Chí Minh",
-      time: "20 phút",
-      status: "pending",
-    },
-    {
-      id: "#352",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "delivering",
-    },
-    {
-      id: "#353",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "delivered",
-    },
-    {
-      id: "#354",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "cancelled",
-    },
-    {
-      id: "#355",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "pending",
-    },
-    {
-      id: "#356",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "pending",
-    },
-    {
-      id: "#357",
-      distance: "3km",
-      address: "123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh",
-      time: "15 phút",
-      status: "pending",
-    },
-  ];
+  // State để lưu trữ các đơn hàng theo trạng thái
+  const [ordersByStatus, setOrdersByStatus] = useState<{
+    pending: Order[];
+    delivering: Order[];
+    delivered: Order[];
+    cancelled: Order[];
+  }>({
+    pending: [],
+    delivering: [],
+    delivered: [],
+    cancelled: [],
+  });
 
-  // Filter orders based on their status
-  const filterOrders = (status: string) =>
-    orders.filter((order) => order.status === status);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Function để fetch orders từ API
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Giả sử statusId 4 là "pending", 6 là "delivering", 9 là "delivered", 10 là "cancelled"
+      const statuses: { [key: string]: number } = {
+        pending: 4,
+        delivering: 6,
+        delivered: 9,
+        cancelled: 10,
+      };
+
+      const fetchedOrders: {
+        pending: Order[];
+        delivering: Order[];
+        delivered: Order[];
+        cancelled: Order[];
+      } = {
+        pending: [],
+        delivering: [],
+        delivered: [],
+        cancelled: [],
+      };
+
+      for (const key in statuses) {
+        const params: GetAllOrdersByStatusParams = {
+          status: statuses[key],
+          pageNumber: 1,
+          pageSize: 10, // Bạn có thể điều chỉnh số lượng theo nhu cầu
+        };
+        const response: GetAllOrdersByStatusResponse =
+          await getAllOrdersByStatus(params);
+        if (response.isSuccess) {
+          fetchedOrders[key as keyof typeof fetchedOrders] =
+            response.result.items;
+        }
+      }
+
+      setOrdersByStatus(fetchedOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setError("Đã có lỗi xảy ra khi tải đơn hàng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {
@@ -102,37 +129,49 @@ const OrderListDelivery: React.FC = () => {
   // Define each tab's content for react-native-tab-view
   const PendingRoute = () => (
     <OrderList
-      orders={filterOrders("pending")}
+      orders={ordersByStatus["pending"]}
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={true}
+      onViewDetail={(orderId: string) =>
+        navigation.navigate("OrderDetail", { orderId })
+      }
     />
   );
 
   const DeliveringRoute = () => (
     <OrderList
-      orders={filterOrders("delivering")}
+      orders={ordersByStatus["delivering"]}
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
+      onViewDetail={(orderId: string) =>
+        navigation.navigate("OrderDetail", { orderId })
+      }
     />
   );
 
   const DeliveredRoute = () => (
     <OrderList
-      orders={filterOrders("delivered")}
+      orders={ordersByStatus["delivered"]}
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
+      onViewDetail={(orderId: string) =>
+        navigation.navigate("OrderDetail", { orderId })
+      }
     />
   );
 
   const CancelledRoute = () => (
     <OrderList
-      orders={filterOrders("cancelled")}
+      orders={ordersByStatus["cancelled"]}
       selectedOrders={selectedOrders}
       onSelectOrder={handleSelectOrder}
       isPending={false}
+      onViewDetail={(orderId: string) =>
+        navigation.navigate("OrderDetail", { orderId })
+      }
     />
   );
 
@@ -147,57 +186,63 @@ const OrderListDelivery: React.FC = () => {
   // Function to render TabView (for non-iOS platforms)
   const renderTabView = () => (
     <View style={{ flex: 1 }}>
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        onIndexChange={setIndex}
-        initialLayout={initialLayout}
-        renderTabBar={({ navigationState, jumpTo }) => (
-          <View className="flex-row mx-4 my-4">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {navigationState.routes.map(
-                (
-                  route: {
-                    key: React.Key | null | undefined;
-                    title:
-                      | string
-                      | number
-                      | boolean
-                      | React.ReactElement<
-                          any,
-                          string | React.JSXElementConstructor<any>
-                        >
-                      | Iterable<React.ReactNode>
-                      | React.ReactPortal
-                      | null
-                      | undefined;
-                  },
-                  i: number
-                ) => (
-                  <View key={route.key} className="flex-row space-x-4">
-                    <TouchableOpacity
-                      onPress={() => route.key && jumpTo(route.key as string)}
-                      className={`py-2 mr-3 px-4 rounded-lg ${
-                        i === index ? "bg-[#A1011A]" : "bg-gray-200"
-                      }`}
-                    >
-                      <Text
-                        className={`text-center font-semibold text-base ${
-                          i === index ? "text-white" : "text-gray-700"
+      {loading ? (
+        <ActivityIndicator size="large" color="#A1011A" />
+      ) : error ? (
+        <Text className="text-red-500 text-center mt-4">{error}</Text>
+      ) : (
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={initialLayout}
+          renderTabBar={({ navigationState, jumpTo }) => (
+            <View className="flex-row mx-4 my-4">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {navigationState.routes.map(
+                  (
+                    route: {
+                      key: React.Key | null | undefined;
+                      title:
+                        | string
+                        | number
+                        | boolean
+                        | React.ReactElement<
+                            any,
+                            string | React.JSXElementConstructor<any>
+                          >
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | null
+                        | undefined;
+                    },
+                    i: number
+                  ) => (
+                    <View key={route.key} className="flex-row space-x-4">
+                      <TouchableOpacity
+                        onPress={() => route.key && jumpTo(route.key as string)}
+                        className={`py-2 mr-3 px-4 rounded-lg ${
+                          i === index ? "bg-[#A1011A]" : "bg-gray-200"
                         }`}
                       >
-                        {route.title}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )
-              )}
-            </ScrollView>
-          </View>
-        )}
-      />
+                        <Text
+                          className={`text-center font-semibold text-base ${
+                            i === index ? "text-white" : "text-gray-700"
+                          }`}
+                        >
+                          {route.title}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )
+                )}
+              </ScrollView>
+            </View>
+          )}
+        />
+      )}
       {/* Show optimization button if two or more orders are selected */}
-      {selectedOrders.length >= 2 && (
+      {selectedOrders.length >= 2 && !loading && !error && (
         <TouchableOpacity
           className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
           onPress={() => navigation.navigate("OptimizeDelivery")}
@@ -210,140 +255,18 @@ const OrderListDelivery: React.FC = () => {
     </View>
   );
 
-  // Function to render ScrollView Tabs (for iOS)
-  const renderScrollViewTabs = () => {
-    const [selectedStatus, setSelectedStatus] = useState("pending");
-
-    const filteredOrders = filterOrders(selectedStatus);
-
-    const getTitle = (status: string) => {
-      switch (status) {
-        case "pending":
-          return "Danh sách đơn cần giao";
-        case "delivering":
-          return "Danh sách đơn đang giao";
-        case "delivered":
-          return "Danh sách đơn đã giao";
-        case "cancelled":
-          return "Danh sách đơn đã hủy";
-        default:
-          return "Danh sách đơn hàng";
-      }
-    };
-
-    return (
-      <>
-        {/* Tabs with ScrollView */}
-        <View className="flex-row mx-4 my-4">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row space-x-4">
-              <TouchableOpacity
-                className={`py-2 px-4 rounded-lg ${
-                  selectedStatus === "pending" ? "bg-[#A1011A]" : "bg-gray-200"
-                }`}
-                onPress={() => setSelectedStatus("pending")}
-              >
-                <Text
-                  className={`text-center font-semibold text-base ${
-                    selectedStatus === "pending"
-                      ? "text-white"
-                      : "text-gray-700"
-                  }`}
-                >
-                  Chờ giao
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`py-2 px-4 rounded-lg ${
-                  selectedStatus === "delivering"
-                    ? "bg-[#A1011A]"
-                    : "bg-gray-200"
-                }`}
-                onPress={() => setSelectedStatus("delivering")}
-              >
-                <Text
-                  className={`text-center font-semibold text-base ${
-                    selectedStatus === "delivering"
-                      ? "text-white"
-                      : "text-gray-700"
-                  }`}
-                >
-                  Đang giao
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`py-2 px-4 rounded-lg ${
-                  selectedStatus === "delivered"
-                    ? "bg-[#A1011A]"
-                    : "bg-gray-200"
-                }`}
-                onPress={() => setSelectedStatus("delivered")}
-              >
-                <Text
-                  className={`text-center font-semibold text-base ${
-                    selectedStatus === "delivered"
-                      ? "text-white"
-                      : "text-gray-700"
-                  }`}
-                >
-                  Đã giao
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className={`py-2 px-4 rounded-lg ${
-                  selectedStatus === "cancelled"
-                    ? "bg-[#A1011A]"
-                    : "bg-gray-200"
-                }`}
-                onPress={() => setSelectedStatus("cancelled")}
-              >
-                <Text
-                  className={`text-center font-semibold text-base ${
-                    selectedStatus === "cancelled"
-                      ? "text-white"
-                      : "text-gray-700"
-                  }`}
-                >
-                  Đã huỷ
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Dynamic title based on status */}
-        <Text className="font-semibold uppercase text-xl mt-2 mx-4">
-          {getTitle(selectedStatus)}
-        </Text>
-
-        {/* Order list */}
-        <OrderList
-          orders={filteredOrders}
-          selectedOrders={selectedOrders}
-          onSelectOrder={handleSelectOrder}
-          isPending={selectedStatus === "pending"}
-          onViewDetail={() => navigation.navigate("OrderDetail")}
-        />
-
-        {/* Show optimization button if two or more orders are selected */}
-        {selectedOrders.length >= 2 && (
-          <TouchableOpacity
-            className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
-            onPress={() => navigation.navigate("OptimizeDelivery")}
-          >
-            <Text className="text-[#A1011A] text-center font-semibold text-lg">
-              Tối ưu chặng đường
-            </Text>
-          </TouchableOpacity>
-        )}
-      </>
-    );
-  };
-
   return (
     <View className="flex-1 bg-white ">
       <WelcomeHeader />
-      {Platform.OS === "ios" ? renderScrollViewTabs() : renderTabView()}
+      {Platform.OS === "ios" ? (
+        <ScrollViewTabs
+          ordersByStatus={ordersByStatus}
+          selectedOrders={selectedOrders}
+          handleSelectOrder={handleSelectOrder}
+        />
+      ) : (
+        renderTabView()
+      )}
     </View>
   );
 };

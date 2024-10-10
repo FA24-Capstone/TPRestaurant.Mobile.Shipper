@@ -9,7 +9,7 @@ interface OrderListProps {
   selectedOrders?: string[];
   onSelectOrder?: (orderId: string) => void;
   isPending?: boolean; // Prop mới để kiểm tra trạng thái "pending"
-  onViewDetail?: () => void;
+  onViewDetail?: (orderId: string) => void; // Cập nhật kiểu
 }
 
 const OrderList: React.FC<OrderListProps> = ({
