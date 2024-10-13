@@ -14,35 +14,10 @@ interface OrderDishesProps {
 }
 
 const OrderDishes: React.FC<OrderDishesProps> = ({ dishes }) => {
-  // Fake data for dishes
-  // const dishes: Dish[] = [
-  //   {
-  //     id: "1",
-  //     name: "Bánh nhân tôm",
-  //     price: "70.000 VND",
-  //     quantity: 1,
-  //     image: require("../../../../assets/item/dish.png"),
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Cơm chiên dương châu",
-  //     price: "50.000 VND",
-  //     quantity: 2,
-  //     image: require("../../../../assets/item/dish.png"),
-  //   },
-  //   {
-  //     id: "3",
-  //     name: "Phở bò đặc biệt",
-  //     price: "60.000 VND",
-  //     quantity: 1,
-  //     image: require("../../../../assets/item/dish.png"),
-  //   },
-  // ];
-
   return (
     <View className="mb-6">
       <Text className="font-semibold text-base text-gray-700">
-        Danh sách món
+        Danh sách món ({dishes.length} món)
       </Text>
 
       {/* Loop through the list of dishes */}

@@ -1,8 +1,8 @@
 export interface Order {
   id: string;
-  time: string;
+  duration?: number;
   address: string;
-  distance: string;
+  distanceToNextDestination: number;
   status: Status;
 }
 
@@ -26,27 +26,65 @@ export interface UpdateOrderStatusResponse {
 
 // Response for getting order map
 export interface GetOrderMapResponse {
-  // Define the structure based on your API response
-  // Ví dụ:
-  mapData: any;
+  result: string;
+  isSuccess: boolean;
+  messages: any[];
 }
 
 // Request body for getting optimal path
 export type GetOptimalPathRequest = string[];
 
-// Response for getting optimal path
+//=============== Response for getting optimal path =============
 export interface GetOptimalPathResponse {
-  // Define the structure based on your API response
-  // Ví dụ:
-  path: any;
+  result: OptimalPathResult[];
+  isSuccess: boolean;
+  messages: any[];
 }
 
-// Parameters for getting all orders by status
+export interface OptimalPathResult {
+  index: number;
+  accountId: string;
+  account: AccountCus;
+  duration: number;
+  distanceToNextDestination: number;
+}
+
+export interface AccountCus {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dob: any;
+  gender: boolean;
+  address: string;
+  isVerified: boolean;
+  isDeleted: boolean;
+  loyaltyPoint: number;
+  avatar: any;
+  isManuallyCreated: boolean;
+  isDelivering: boolean;
+  id: string;
+  userName: string;
+  normalizedUserName: string;
+  email: string;
+  normalizedEmail: string;
+  emailConfirmed: boolean;
+  passwordHash: any;
+  securityStamp: string;
+  concurrencyStamp: string;
+  phoneNumberConfirmed: boolean;
+  twoFactorEnabled: boolean;
+  lockoutEnd: any;
+  lockoutEnabled: boolean;
+  accessFailedCount: number;
+}
+
+//======================= Parameters for getting all orders by status =======================
 export interface GetAllOrdersByStatusParams {
-  status: number;
-  orderType?: number;
+  shipperId: string;
+  // orderType?: number;
   pageNumber: number;
   pageSize: number;
+  status: number;
 }
 
 // Response for getting all orders by status
@@ -61,6 +99,7 @@ export interface GetAllOrdersByStatusResponse {
 
 // Order interface based on your example response
 export interface Order {
+  validatingImg?: string;
   orderId: string;
   orderDate: string;
   deliveryTime: string | null;

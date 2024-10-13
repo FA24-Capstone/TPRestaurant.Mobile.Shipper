@@ -18,7 +18,7 @@ import {
   GetAllOrdersByStatusResponse,
   Order,
 } from "../types/order_type";
-import { getAllOrdersByStatus } from "@/api/orderApi";
+import { getAllOrdersByShipper } from "@/api/orderApi";
 import { showErrorMessage } from "@/components/FlashMessageHelpers";
 import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
 
@@ -28,12 +28,6 @@ const initialLayout = { width: Dimensions.get("window").width };
 type RootStackParamList = {
   OptimizeDelivery: undefined;
   OrderDetail: { orderId: string };
-};
-
-const statusMapping: { [key: string]: 4 | 6 } = {
-  pending: 4, // Assuming "pending" corresponds to statusId 4
-  delivering: 6, // Assuming "delivering" corresponds to statusId 6
-  // Bạn có thể thêm các mapping khác nếu cần
 };
 
 const OrderListDelivery: React.FC = () => {
@@ -47,6 +41,8 @@ const OrderListDelivery: React.FC = () => {
     { key: "delivered", title: "Đã giao" },
     { key: "cancelled", title: "Đã hủy" },
   ]);
+
+  console.log("selectedOrdersNHAA", JSON.stringify(selectedOrders));
 
   // State để lưu trữ các đơn hàng theo trạng thái
   const [ordersByStatus, setOrdersByStatus] = useState<{
@@ -71,8 +67,8 @@ const OrderListDelivery: React.FC = () => {
     try {
       // Giả sử statusId 4 là "pending", 6 là "delivering", 9 là "delivered", 10 là "cancelled"
       const statuses: { [key: string]: number } = {
-        pending: 4,
-        delivering: 6,
+        pending: 7,
+        delivering: 8,
         delivered: 9,
         cancelled: 10,
       };
@@ -91,12 +87,13 @@ const OrderListDelivery: React.FC = () => {
 
       for (const key in statuses) {
         const params: GetAllOrdersByStatusParams = {
-          status: statuses[key],
+          shipperId: "22ca9104-2837-4862-a399-1027ae9e0889",
           pageNumber: 1,
           pageSize: 10, // Bạn có thể điều chỉnh số lượng theo nhu cầu
+          status: statuses[key],
         };
         const response: GetAllOrdersByStatusResponse =
-          await getAllOrdersByStatus(params);
+          await getAllOrdersByShipper(params);
         if (response.isSuccess) {
           fetchedOrders[key as keyof typeof fetchedOrders] =
             response.result.items;
@@ -125,6 +122,8 @@ const OrderListDelivery: React.FC = () => {
       return updatedOrders;
     });
   };
+
+  console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
 
   // Define each tab's content for react-native-tab-view
   const PendingRoute = () => (

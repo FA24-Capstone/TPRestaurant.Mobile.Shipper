@@ -9,7 +9,7 @@ import { useNavigation } from "@react-navigation/native";
 // Define the types for navigation routes
 type RootStackParamList = {
   OrderDetail: { orderId: string };
-  OptimizeDelivery: undefined;
+  OptimizeDelivery: { selectedOrders: string[] };
 };
 
 interface ScrollViewTabsProps {
@@ -23,6 +23,8 @@ interface ScrollViewTabsProps {
   handleSelectOrder: (orderId: string) => void;
 }
 
+//ANDROID
+
 const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
   ordersByStatus,
   selectedOrders,
@@ -33,6 +35,8 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
     useState<keyof typeof ordersByStatus>("pending");
 
   const filteredOrders = ordersByStatus[selectedStatus];
+
+  console.log("ordersByStatus", ordersByStatus);
 
   const getTitle = (status: keyof typeof ordersByStatus) => {
     switch (status) {
@@ -51,6 +55,12 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
 
   const handleViewDetail = (orderId: string) => {
     navigation.navigate("OrderDetail", { orderId });
+  };
+
+  const handleOptimizeDelivery = () => {
+    if (selectedOrders.length > 2) {
+      navigation.navigate("OptimizeDelivery", { selectedOrders });
+    }
   };
 
   return (
@@ -102,7 +112,7 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
       {selectedOrders.length >= 2 && (
         <TouchableOpacity
           className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
-          onPress={() => navigation.navigate("OptimizeDelivery")}
+          onPress={handleOptimizeDelivery}
         >
           <Text className="text-[#A1011A] text-center font-semibold text-lg">
             Tối ưu chặng đường

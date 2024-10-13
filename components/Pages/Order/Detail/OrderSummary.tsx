@@ -1,13 +1,51 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Order } from "@/app/types/order_type";
+import {
+  calculateDeliverOrderFee,
+  getAccountByPhoneNumber,
+} from "@/api/feeShipApi";
 
 interface OrderSummaryProps {
   orderData: Order;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
+  const [shippingFee, setShippingFee] = useState<number | null>(null);
+
+  //Tính phí ship
+  useEffect(() => {
+    if (!orderData?.account?.phoneNumber) return;
+    const fetchShippingFee = async () => {
+      try {
+        // Lấy thông tin tài khoản để lấy customerInfoAddressId
+        const accountResponse = await getAccountByPhoneNumber(
+          orderData?.account?.phoneNumber
+        );
+        const address = accountResponse.result.addresses.find(
+          (addr) => addr.isCurrentUsed
+        );
+
+        if (address) {
+          // Gọi API để tính phí ship dựa trên customerInfoAddressId
+          const feeResponse = await calculateDeliverOrderFee(
+            address.customerInfoAddressId
+          );
+          setShippingFee(feeResponse.result);
+        } else {
+          console.warn("Không tìm thấy địa chỉ giao hàng.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch shipping fee:", error);
+      }
+    };
+
+    if (orderData?.account?.phoneNumber) {
+      fetchShippingFee();
+    }
+  }, [orderData]);
+
   return (
     <View className="mb-4">
       <View className="flex-row justify-between">
@@ -16,9 +54,15 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
         </Text>
         <View className="flex-row items-center">
           <MaterialIcons name="call" size={18} color="green" className="ml-2" />
-          <Text className="text-lg text-gray-700  font-bold ml-3">
-            +84 {orderData?.account?.phoneNumber}{" "}
-          </Text>
+          {orderData?.account?.phoneNumber ? (
+            <Text className="text-lg text-gray-700  font-bold ml-3">
+              +84 {orderData?.account?.phoneNumber}{" "}
+            </Text>
+          ) : (
+            <Text className="text-lg text-gray-700  font-bold ml-3">
+              Không có số điện thoại
+            </Text>
+          )}
         </View>
       </View>
 
@@ -32,12 +76,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
 
       <View className="flex-row justify-between mt-2">
         <Text className="text-gray-600 text-base  font-medium">Phí ship</Text>
-        <Text className="text-gray-700 font-medium text-base">30.000 VND</Text>
+        <Text className="text-gray-700 font-medium text-base">
+          {shippingFee !== null
+            ? `${shippingFee.toLocaleString("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              })}`
+            : "Đang tải..."}
+        </Text>
       </View>
       <View className="flex-row justify-between mt-2">
-        <Text className="text-red-600 font-bold text-base font-medium">
-          Tổng tiền
-        </Text>
+        <Text className="text-red-600 font-bold text-base ">Tổng tiền</Text>
         <Text className="text-red-600 font-bold  text-base">
           {orderData.totalAmount.toLocaleString("vi-VN", {
             style: "currency",
