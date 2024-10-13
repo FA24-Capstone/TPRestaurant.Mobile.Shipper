@@ -10,6 +10,27 @@ interface CustomerInfoProps {
 const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerData }) => {
   console.log("customerData", customerData);
 
+  const statusMapping = {
+    6: { colorClass: "bg-cyan-800", text: "Sẵn sàng giao hàng" },
+    7: { colorClass: "bg-[#FFA500]", text: "Đơn chờ giao" },
+    8: { colorClass: "bg-[#00BFFF]", text: "Đang giao hàng" },
+    9: { colorClass: "bg-[#32CD32]", text: "Đã hoàn thành" },
+    10: { colorClass: "bg-[#FF0000]", text: "Đã hủy" },
+  };
+
+  const getStatusInfo = (statusId: keyof typeof statusMapping) => {
+    return (
+      statusMapping[statusId] || {
+        colorClass: "bg-gray-800",
+        text: "Không xác định",
+      }
+    );
+  };
+
+  const statusInfo = getStatusInfo(
+    customerData?.statusId as 6 | 7 | 8 | 9 | 10
+  );
+
   return (
     <View className="flex-row items-center justify-between mb-4 p-4 bg-gray-100 rounded-lg">
       <View className="flex-row items-center">
@@ -30,9 +51,9 @@ const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerData }) => {
         <Text className="text-[#A1011A] font-semibold text-center text-lg mb-2">
           {customerData?.account?.distance || "5km"}
         </Text>
-        <View className="bg-blue-500 p-2 rounded-md">
+        <View className={` p-2 rounded-md ${statusInfo.colorClass}`}>
           <Text className="text-center text-white font-semibold">
-            {customerData?.status?.vietnameseName || customerData?.statusId}
+            {statusInfo.text || "không xác định"}
           </Text>
         </View>
       </View>

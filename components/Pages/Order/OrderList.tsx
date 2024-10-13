@@ -22,20 +22,29 @@ const OrderList: React.FC<OrderListProps> = ({
 }) => {
   // Nếu có limit, chỉ hiển thị số đơn hàng giới hạn, ngược lại hiển thị toàn bộ
   const displayedOrders = limit ? orders.slice(0, limit) : orders;
+  // console.log("displayedOrders", displayedOrders);
+  console.log(
+    "ordersId",
+    orders.map((order) => order.orderId)
+  );
 
   return (
-    <ScrollView className="px-2 ">
-      {displayedOrders.map((order, index) => (
-        <OrderItem
-          key={order.id}
-          order={order}
-          selected={selectedOrders?.includes(order.id) ?? false} // Kiểm tra xem đơn hàng có được chọn không
-          onSelect={onSelectOrder ?? (() => {})} // Hàm xử lý khi chọn/bỏ chọn
-          isPending={isPending} // Truyền thêm isPending để OrderItem biết có checkbox hay không
-          onViewDetail={onViewDetail}
-        />
-      ))}
-    </ScrollView>
+    <>
+      {displayedOrders.length > 0 && (
+        <ScrollView className="px-2 ">
+          {displayedOrders.map((order, index) => (
+            <OrderItem
+              key={order.orderId}
+              order={order}
+              selected={selectedOrders?.includes(order.orderId) ?? false} // Kiểm tra xem đơn hàng có được chọn không
+              onSelect={onSelectOrder ?? (() => {})} // Hàm xử lý khi chọn/bỏ chọn
+              isPending={isPending} // Truyền thêm isPending để OrderItem biết có checkbox hay không
+              onViewDetail={onViewDetail}
+            />
+          ))}
+        </ScrollView>
+      )}
+    </>
   );
 };
 

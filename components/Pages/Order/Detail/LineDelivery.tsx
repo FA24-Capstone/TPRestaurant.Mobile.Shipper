@@ -1,12 +1,33 @@
-import React from "react";
-import { View, Text, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, Linking, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Order } from "@/app/types/order_type";
+import moment from "moment-timezone";
+import { getOrderMap } from "@/api/orderApi";
+import { ActivityIndicator } from "react-native-paper";
 
 interface LineDeliveryProps {
   orderData: Order;
 }
 const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleMapPress = async () => {
+    if (orderData.orderId === undefined) return;
+    try {
+      setLoading(true);
+      const response = await getOrderMap(orderData.orderId);
+      if (response.isSuccess) {
+        Linking.openURL(response.result);
+      } else {
+        console.error("Failed to get map link:", response.messages);
+      }
+    } catch (error) {
+      console.error("Error while fetching map link:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <View className="mb-4">
       <View className="flex-row justify-between">
@@ -17,19 +38,31 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
             #{orderData.orderId.slice(0, 8)}
           </Text>
         </Text>
-        <Text className="text-blue-500  text-lg italic font-medium">
-          Xem bản đồ
-        </Text>
+        <TouchableOpacity onPress={handleMapPress} disabled={loading}>
+          <Text className="text-blue-500 text-lg italic font-medium">
+            {loading ? (
+              <ActivityIndicator size="small" color="#0000ff" />
+            ) : (
+              "Xem bản đồ"
+            )}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View className="p-4 border-2 border-zinc-200 rounded-md">
-        <Text className="text-gray-600 ">
-          <Text className="font-semibold text-gray-800">11:00 AM,</Text> {""}
-          27/09/2024 (Hôm nay)
-        </Text>
+        {orderData.deliveryTime ? (
+          <Text className="text-gray-600 ">
+            <Text className="font-semibold text-gray-800">
+              {moment.utc(orderData.deliveryTime).format("hh:mm A, ")}
+            </Text>
+            {moment.utc(orderData.deliveryTime).format("DD/MM/YYYY")}{" "}
+          </Text>
+        ) : (
+          <Text className="text-gray-500 font-semibold">Không xác định</Text>
+        )}
         <View className="flex-row mt-2 items-center  my-3">
           <Text className=" my-1 text-red-500 font-bold text-lg">
-            {orderData.deliveryTime || 0} phút
+            {orderData.duration || 0} phút
           </Text>
           <View className="ml-4">
             <Image
@@ -48,14 +81,26 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
 
             <Text className=" text-gray-400 font-semibold mt-6">Đến</Text>
             <Text className=" text-gray-700 text-base font-semibold">
-              {orderData.account.address}
+              {orderData?.account?.address || "Không xác định"}
             </Text>
           </View>
         </View>
-        <Text className="text-gray-600 ">
-          <Text className="font-semibold text-gray-800">11:20 AM, </Text> {""}
-          27/09/2024 (Hôm nay)
-        </Text>
+        {orderData.deliveryTime ? (
+          <Text className="text-gray-600 ">
+            <Text className="font-semibold text-gray-800">
+              {moment
+                .utc(orderData.deliveryTime)
+                .add(orderData.duration, "minutes")
+                .format("hh:mm A, ")}
+            </Text>
+            {moment
+              .utc(orderData.deliveryTime)
+              .add(orderData.duration, "minutes")
+              .format("DD/MM/YYYY")}{" "}
+          </Text>
+        ) : (
+          <Text className="text-gray-500 font-semibold">Không xác định</Text>
+        )}
       </View>
     </View>
   );

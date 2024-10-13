@@ -9,8 +9,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
 const getStatusTextAndColor = (status: number) => {
   switch (status) {
-    case 4:
-      // 7
+    case 7:
       return { text: "Chờ giao hàng", color: "#FFA500" }; // Màu cam cho "Chờ giao hàng"
     case 8:
       return { text: "Đang giao hàng", color: "#00BFFF" }; // Màu xanh dương cho "Đang giao hàng"
@@ -37,7 +36,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
 }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  console.log("OrderItemNE", JSON.stringify(order));
+  // console.log("OrderItemNE", JSON.stringify(order));
 
   const router = useRouter();
   // Giới hạn địa chỉ thành 1 dòng (khoảng 40 ký tự)
@@ -51,6 +50,8 @@ const OrderItem: React.FC<OrderItemProps> = ({
   const { text: statusText, color: statusColor } = getStatusTextAndColor(
     order.status.id
   );
+
+  console.log("orderlog", JSON.stringify(order.orderId));
 
   const handleViewDetail = () => {
     if (onViewDetail) {
@@ -69,7 +70,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
       {isPending && (
         <Checkbox
           status={selected ? "checked" : "unchecked"}
-          onPress={() => onSelect(order.id)}
+          onPress={() => onSelect(order.orderId)}
           color="#A1011A"
           uncheckedColor="gray"
         />
@@ -88,7 +89,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
               #{order.orderId.slice(0, 8)} - {statusText}
             </Text>
             <Text className="text-gray-700 font-semibold text-lg ">
-              {order.deliveryTime || 0} phút
+              {order?.duration || 0} phút
             </Text>
           </View>
           <View className=" my-2 flex-row">
@@ -104,11 +105,11 @@ const OrderItem: React.FC<OrderItemProps> = ({
                   color="green"
                 />
                 <Text className="text-gray-600">
-                  ({order.distance || 0} km)
+                  ({order?.distanceToNextDestination || 0} km)
                 </Text>
               </View>
               <Text className="ml-2 text-gray-700 font-medium">
-                {order.account.address}
+                {order?.account?.address || "Không xác định"}
               </Text>
             </View>
           </View>

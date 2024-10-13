@@ -1,11 +1,20 @@
 import DeliveryCard from "@/components/Pages/Delivery/DeliveryCard";
 import DeliveryStatus from "@/components/Pages/Delivery/DeliveryStatus";
+import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect } from "react";
 import { View, Text, ScrollView } from "react-native";
 
+interface RouteParams {
+  selectedOrders: string[];
+}
+
 const OptimizeDelivery: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { selectedOrders } = route.params as RouteParams;
+
+  console.log("selectedOrdersNew", JSON.stringify(selectedOrders));
 
   useEffect(() => {
     // Ẩn thanh tab khi màn hình này được mount

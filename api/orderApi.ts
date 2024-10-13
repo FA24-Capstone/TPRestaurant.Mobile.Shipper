@@ -82,25 +82,25 @@ export const getOptimalPath = async (
 };
 
 // ==================== Get All Orders By Status ====================
-export const getAllOrdersByStatus = async (
+export const getAllOrdersByShipper = async (
   params: GetAllOrdersByStatusParams
 ): Promise<GetAllOrdersByStatusResponse> => {
   try {
-    console.log("getAllOrdersByStatus params:", params);
+    console.log("getAllOrdersByShipper params:", params);
 
     const response = await axios.get<GetAllOrdersByStatusResponse>(
-      `${API_URL}/order/get-all-order-by-Status/${params.pageNumber}/${params.pageSize}`,
+      `${API_URL}/order/get-all-order-by-shipper-id/${params.shipperId}/${params.pageNumber}/${params.pageSize}?status=${params.status}`,
       {
         params: {
+          shipperId: params.shipperId,
           status: params.status,
-          orderType: params.orderType,
         },
         headers: {
           "Content-Type": "application/json",
         },
       }
     );
-    console.log("API response for getAllOrdersByStatus:", response.data);
+    console.log("API response for getAllOrdersByshipper:", response.data);
 
     return response.data;
   } catch (error) {
@@ -168,10 +168,10 @@ export const getOrderId = async (
       { headers: { "Content-Type": "application/json" } }
     );
     // Log detailed response for debugging
-    console.log(
-      "API response for getHistoryOrderId:",
-      JSON.stringify(response.data.result, null, 2)
-    );
+    // console.log(
+    //   "API response for getHistoryOrderId:",
+    //   JSON.stringify(response.data.result, null, 2)
+    // );
     // Return the entire response data to match the expected shape
     return response.data;
   } catch (error) {

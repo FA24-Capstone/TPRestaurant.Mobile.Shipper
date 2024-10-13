@@ -32,7 +32,7 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("orderDataNE", JSON.stringify(orderData));
+  // console.log("orderDataNE", JSON.stringify(orderData));
 
   useEffect(() => {
     // Ẩn thanh tab khi màn hình này được mount
@@ -97,12 +97,14 @@ const OrderDetail = () => {
           <CustomerInfo customerData={orderData.order} />
         )}
         {/* Trạng thái đơn hàng và địa chỉ */}
-        <View>
-          <Text className="font-semibold text-lg text-gray-600 mb-2">
-            Hình ảnh đã giao:
-          </Text>
-          <ImageGallery images={images} />
-        </View>
+        {orderData && orderData.order.validatingImg && (
+          <View>
+            <Text className="font-semibold text-lg text-gray-600 mb-2">
+              Hình ảnh đã giao:
+            </Text>
+            <ImageGallery image={orderData.order.validatingImg} />
+          </View>
+        )}
         {orderData && <LineDelivery orderData={orderData.order} />}
         {/* Tóm tắt đơn hàng */}
         {orderData && <OrderSummary orderData={orderData.order} />}
@@ -114,7 +116,7 @@ const OrderDetail = () => {
 
       {/* Order actions placed at the bottom */}
       <View className="absolute bottom-0 left-0 right-0 bg-white p-4">
-        <OrderActions orderId={orderId} />
+        {orderData && <OrderActions orderData={orderData.order} />}
       </View>
     </View>
   );
