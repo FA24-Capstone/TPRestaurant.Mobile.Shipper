@@ -6,7 +6,7 @@ import { Order } from "@/app/types/order_type";
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderUpload: undefined;
+  OrderUpload: { orderId: string };
 };
 
 interface OrderActionsProps {
@@ -17,7 +17,9 @@ const OrderActions: React.FC<OrderActionsProps> = ({ orderData }) => {
   const router = useRouter();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const handleDelivered = () => {
-    navigation.navigate("OrderUpload");
+    // console.log("orderData.orderId", orderData.orderId);
+
+    navigation.navigate("OrderUpload", { orderId: orderData.orderId });
   };
 
   const handleDelivering = () => {

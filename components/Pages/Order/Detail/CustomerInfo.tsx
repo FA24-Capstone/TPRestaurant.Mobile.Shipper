@@ -49,7 +49,7 @@ const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerData }) => {
       </View>
       <View>
         <Text className="text-[#A1011A] font-semibold text-center text-lg mb-2">
-          {customerData?.account?.distance || "5km"}
+          {customerData?.totalDistance || "0km"}
         </Text>
         <View className={` p-2 rounded-md ${statusInfo.colorClass}`}>
           <Text className="text-center text-white font-semibold">

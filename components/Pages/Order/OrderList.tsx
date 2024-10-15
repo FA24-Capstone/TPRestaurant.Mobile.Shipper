@@ -10,6 +10,7 @@ interface OrderListProps {
   onSelectOrder?: (orderId: string) => void;
   isPending?: boolean; // Prop mới để kiểm tra trạng thái "pending"
   onViewDetail?: (orderId: string) => void; // Cập nhật kiểu
+  setIsDelivering?: (isDelivering: boolean) => void; // Cập nhật kiểu
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -19,6 +20,7 @@ const OrderList: React.FC<OrderListProps> = ({
   onSelectOrder,
   isPending,
   onViewDetail,
+  setIsDelivering,
 }) => {
   // Nếu có limit, chỉ hiển thị số đơn hàng giới hạn, ngược lại hiển thị toàn bộ
   const displayedOrders = limit ? orders.slice(0, limit) : orders;
@@ -40,6 +42,7 @@ const OrderList: React.FC<OrderListProps> = ({
               onSelect={onSelectOrder ?? (() => {})} // Hàm xử lý khi chọn/bỏ chọn
               isPending={isPending} // Truyền thêm isPending để OrderItem biết có checkbox hay không
               onViewDetail={onViewDetail}
+              setIsDelivering={setIsDelivering}
             />
           ))}
         </ScrollView>

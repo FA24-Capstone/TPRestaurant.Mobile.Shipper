@@ -52,6 +52,8 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         setLoading(true);
+        console.log("GetOrderId", orderId);
+
         const response: GetHistoryOrderIdReponse = await getOrderId(orderId);
         if (response.isSuccess) {
           setOrderData(response.result);

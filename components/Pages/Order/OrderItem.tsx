@@ -5,6 +5,11 @@ import { OrderItemProps } from "@/app/types/order_type";
 import { Checkbox } from "react-native-paper";
 import { useNavigation, useRouter } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { updateOrderDetailStatus } from "@/api/orderApi";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
 const getStatusTextAndColor = (status: number) => {
@@ -33,6 +38,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
   onSelect,
   isPending,
   onViewDetail,
+  setIsDelivering,
 }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
@@ -41,17 +47,41 @@ const OrderItem: React.FC<OrderItemProps> = ({
   const router = useRouter();
   // Giới hạn địa chỉ thành 1 dòng (khoảng 40 ký tự)
   const maxLength = 40;
-  const truncatedAddress =
-    order?.address?.length > maxLength
-      ? order.address.slice(0, maxLength) + "..."
-      : order.address;
 
   // Lấy text và màu từ hàm getStatusTextAndColor
   const { text: statusText, color: statusColor } = getStatusTextAndColor(
     order.status.id
   );
 
-  console.log("orderlog", JSON.stringify(order.orderId));
+  // console.log("orderlog", JSON.stringify(order));
+
+  const handleDriverConfirm = async () => {
+    console.log("Driver confirm");
+
+    try {
+      // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
+      const response = await updateOrderDetailStatus(order.orderId, true);
+      console.log("responseUpdatestatus", response);
+
+      if (response.isSuccess) {
+        console.log("Order status updated successfully:", response);
+        if (setIsDelivering) {
+          setIsDelivering(true);
+        }
+        showSuccessMessage("Đơn hàng này bắt đầu được giao!");
+        // Hiển thị thông báo thành công và cập nhật giao diện nếu cần
+      } else {
+        console.error("Failed to update order status:", response.messages);
+        showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
+        // Hiển thị thông báo lỗi
+      }
+    } catch (error) {
+      showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau");
+
+      console.error("Error updating order status:", error);
+      // Xử lý lỗi và hiển thị thông báo lỗi
+    }
+  };
 
   const handleViewDetail = () => {
     if (onViewDetail) {
@@ -63,6 +93,8 @@ const OrderItem: React.FC<OrderItemProps> = ({
       navigation.navigate("OrderDetail", { orderId: order.orderId });
     }
   };
+
+  const handleDriveredConfirm = async () => {};
 
   return (
     <View className=" mt-4 flex-row items-center">
@@ -83,13 +115,13 @@ const OrderItem: React.FC<OrderItemProps> = ({
         <View className="flex-1 ">
           <View className="flex-row justify-between items-center">
             <Text
-              className="font-bold text-lg w-[90%]"
+              className="font-bold text-lg w-[80%] uppercase"
               style={{ color: statusColor }}
             >
               #{order.orderId.slice(0, 8)} - {statusText}
             </Text>
             <Text className="text-gray-700 font-semibold text-lg ">
-              {order?.duration || 0} phút
+              {order?.totalDuration || 0}
             </Text>
           </View>
           <View className=" my-2 flex-row">
@@ -105,7 +137,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
                   color="green"
                 />
                 <Text className="text-gray-600">
-                  ({order?.distanceToNextDestination || 0} km)
+                  ({order?.totalDistance || 0})
                 </Text>
               </View>
               <Text className="ml-2 text-gray-700 font-medium">
@@ -122,11 +154,25 @@ const OrderItem: React.FC<OrderItemProps> = ({
                 Xem
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity className="bg-[#A1011A] w-[45%] py-2 px-4 rounded-lg">
-              <Text className="text-white text-lg text-center font-semibold uppercase">
-                Giao ngay
-              </Text>
-            </TouchableOpacity>
+            {order.status.id === 7 ? (
+              <TouchableOpacity className="bg-[#A1011A] w-[45%] py-2 px-4 rounded-lg">
+                <Text
+                  className="text-white text-lg text-center font-semibold uppercase"
+                  onPress={handleDriverConfirm}
+                >
+                  Giao ngay
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity className="bg-[#A1011A] w-[45%] py-2 px-4 rounded-lg">
+                <Text
+                  className="text-white text-lg text-center font-semibold uppercase"
+                  onPress={handleDriveredConfirm}
+                >
+                  Đã giao
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
