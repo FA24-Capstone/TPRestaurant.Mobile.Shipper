@@ -59,12 +59,15 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
 
   const handleOptimizeDelivery = () => {
     if (selectedOrders.length > 2) {
+      console.log("selectedOrdersak", selectedOrders);
+
       navigation.navigate("OptimizeDelivery", { selectedOrders });
     }
   };
 
   return (
     <>
+      selectedOrdersNew
       {/* Tabs with ScrollView */}
       <View className="flex-row mx-4 my-4">
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -93,12 +96,10 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
           </View>
         </ScrollView>
       </View>
-
       {/* Dynamic title based on status */}
       <Text className="font-semibold uppercase text-xl mt-2 mx-4">
         {getTitle(selectedStatus)}
       </Text>
-
       {/* Order list */}
       <OrderList
         orders={filteredOrders}
@@ -107,7 +108,6 @@ const ScrollViewTabs: React.FC<ScrollViewTabsProps> = ({
         isPending={selectedStatus === "pending"}
         onViewDetail={handleViewDetail}
       />
-
       {/* Show optimization button if two or more orders are selected */}
       {selectedOrders.length >= 2 && (
         <TouchableOpacity

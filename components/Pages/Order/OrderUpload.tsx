@@ -4,8 +4,6 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  FlatList,
-  Alert,
   Dimensions,
   StyleSheet,
 } from "react-native";
@@ -17,17 +15,27 @@ import {
   showSuccessMessage,
   showErrorMessage,
 } from "@/components/FlashMessageHelpers";
+import { useRoute } from "@react-navigation/native";
+import { uploadConfirmedOrderImage } from "@/api/orderApi";
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderDetail: undefined;
+  OrderDetail: { orderId: string };
 };
 
+interface RouteParams {
+  orderId: string;
+}
+
 const OrderUpload: React.FC = () => {
+  const route = useRoute();
+  const { orderId } = route.params as RouteParams;
+  console.log("orderId", orderId);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // State for storing multiple images
-  const [images, setImages] = useState<string[]>([]);
+  const [image, setImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   useEffect(() => {
     // Ẩn thanh tab khi màn hình này được mount
@@ -64,22 +72,19 @@ const OrderUpload: React.FC = () => {
     let permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        "Permission Denied",
-        "You need to grant permission to access the gallery."
-      );
+    if (!permissionResult.granted) {
+      showErrorMessage("You need to grant permission to access the gallery.");
       return;
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
       quality: 1,
     });
+    console.log("result.assets", result.assets);
 
     if (!result.canceled && result.assets?.length > 0) {
-      setImages([...images, ...result.assets.map((asset) => asset.uri)]); // Add selected images to the list
+      setImage(result.assets[0].uri);
     }
   };
 
@@ -91,89 +96,90 @@ const OrderUpload: React.FC = () => {
     });
 
     if (!result.canceled && result.assets?.length > 0) {
-      setImages([...images, result.assets[0].uri]); // Add captured image to the list
+      setImage(result.assets[0].uri);
     }
   };
 
   // Function to handle saving
-  const handleSave = () => {
-    if (images.length === 0) {
-      Alert.alert(
-        "Error",
-        "Please upload at least one proof of delivery image."
-      );
+  const handleSave = async () => {
+    if (!image) {
+      showErrorMessage("Please upload or capture one proof of delivery image.");
       return;
     }
-    showSuccessMessage("Your delivery proof has been uploaded successfully.");
-    navigation.replace("OrderDetail");
-  };
+    if (!orderId) {
+      showErrorMessage("Order Id is required.");
+      return;
+    }
 
-  // Function to delete an image
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index)); // Remove image by index
+    setUploading(true);
+    try {
+      // Call the upload API function
+      const response = await uploadConfirmedOrderImage({
+        orderId,
+        image,
+      });
+      console.log("responseUploadne", response);
+
+      if (response.isSuccess) {
+        // Adjust based on your API's response structure
+        showSuccessMessage(
+          "Your delivery proof has been uploaded successfully."
+        );
+        navigation.replace("OrderDetail", { orderId });
+      } else {
+        showErrorMessage(response.messages[0] || "Failed to upload the image.");
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      showErrorMessage("Failed to upload the image. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Get the screen width to calculate image size
   const screenWidth = Dimensions.get("window").width;
-  const imageSize = screenWidth / 2 - 30; // 2 columns with some spacing
+  const imageSize = screenWidth; // 2 columns with some spacing
 
   return (
     <View className="flex-1 bg-white px-4 py-6">
-      {/* FlatList to display all selected or captured images */}
-      <FlatList
-        data={images}
-        numColumns={2} // Show 2 items per row
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: item }}
-              style={{
-                width: imageSize,
-                height: imageSize,
-                borderRadius: 10,
-              }}
-              resizeMode="contain"
-            />
-            {/* Delete Button in the top-right corner */}
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => removeImage(index)}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={24}
-                color="gray"
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <TouchableOpacity
-            onPress={pickImageFromGallery}
+      {image ? (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: image }}
             style={{
-              width: "100%",
-              height: 200,
-              borderWidth: 1,
-              borderStyle: "dashed",
-              borderColor: "gray",
+              width: imageSize,
+              height: imageSize,
               borderRadius: 10,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#F9F9F9",
+              margin: "auto",
             }}
-          >
-            <MaterialCommunityIcons
-              name="camera-outline"
-              size={40}
-              color="gray"
-            />
-            <Text className="text-gray-600">Take proof of delivery photo</Text>
-          </TouchableOpacity>
-        )}
-      />
+            resizeMode="contain"
+          />
+        </View>
+      ) : (
+        <TouchableOpacity
+          onPress={pickImageFromGallery}
+          style={{
+            width: "100%",
+            height: 200,
+            borderWidth: 1,
+            borderStyle: "dashed",
+            borderColor: "gray",
+            borderRadius: 10,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#F9F9F9",
+          }}
+        >
+          <MaterialCommunityIcons
+            name="camera-outline"
+            size={40}
+            color="gray"
+          />
+          <Text className="text-gray-600">Take proof of delivery photo</Text>
+        </TouchableOpacity>
+      )}
 
-      {/* Button to Retake or Select from Camera */}
       <View className="flex-row space-x-2 mt-4">
         <TouchableOpacity
           onPress={pickImageFromCamera}
@@ -190,7 +196,6 @@ const OrderUpload: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Save Button */}
       <View className="py-4">
         <TouchableOpacity
           className="p-4 rounded bg-[#A1011A]"

@@ -100,7 +100,7 @@ export const getAllOrdersByShipper = async (
         },
       }
     );
-    console.log("API response for getAllOrdersByshipper:", response.data);
+    // console.log("API response for getAllOrdersByshipper:", response.data);
 
     return response.data;
   } catch (error) {
@@ -138,7 +138,19 @@ export const uploadConfirmedOrderImage = async (
 ): Promise<UploadConfirmedOrderImageResponse> => {
   const formData = new FormData();
   formData.append("OrderId", data.orderId);
-  formData.append("Image", data.image);
+
+  const filename = data.image.split("/").pop();
+  const type = "image/jpeg"; // Bạn có thể thay đổi nếu cần thiết
+  formData.append("Image", {
+    uri: data.image,
+    name: filename,
+    type: type,
+  } as any);
+
+  console.log("dataUpload", {
+    orderId: data.orderId,
+    image: data.image,
+  });
 
   try {
     const response = await axios.post<UploadConfirmedOrderImageResponse>(
@@ -147,13 +159,23 @@ export const uploadConfirmedOrderImage = async (
       {
         headers: {
           "Content-Type": "multipart/form-data",
+          // "Authorization": `Bearer ${token}`, // Include if required
         },
+        timeout: 10000, // Optional: set a timeout for the request
       }
     );
+    console.log("API response for uploadConfirmedOrderImage:", response.data);
     return response.data;
-  } catch (error) {
-    console.error("Failed to upload confirmed order image:", error);
-    throw error;
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios error:", error.response?.data);
+      throw new Error(
+        error.response?.data?.message || "Failed to upload image."
+      );
+    } else {
+      console.error("Unexpected error:", error);
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -177,6 +199,29 @@ export const getOrderId = async (
   } catch (error) {
     // Log and rethrow the error to handle it in the caller function or middleware
     console.error("Failed to getHistoryOrderId:", error);
+    throw error;
+  }
+};
+
+// ==================== Update Order Detail Status ====================
+export const updateOrderDetailStatus = async (
+  orderId: string, // Expecting an array of order IDs
+  isSuccessful: boolean
+): Promise<UpdateOrderStatusResponse> => {
+  try {
+    const response = await axios.put<UpdateOrderStatusResponse>(
+      `${API_URL}/order/update-order-status/${orderId}`,
+      orderId, // Send the orderIds array in the body
+      {
+        params: { isSuccessful }, // Pass the isSuccessful as a query parameter
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update order detail status:", error);
     throw error;
   }
 };

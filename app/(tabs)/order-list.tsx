@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { TabView, SceneMap } from "react-native-tab-view";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
-import { useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
   GetAllOrdersByStatusParams,
@@ -26,7 +26,7 @@ const initialLayout = { width: Dimensions.get("window").width };
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OptimizeDelivery: undefined;
+  OptimizeDelivery: { selectedOrders: string[] };
   OrderDetail: { orderId: string };
 };
 
@@ -41,8 +41,8 @@ const OrderListDelivery: React.FC = () => {
     { key: "delivered", title: "Đã giao" },
     { key: "cancelled", title: "Đã hủy" },
   ]);
-
-  console.log("selectedOrdersNHAA", JSON.stringify(selectedOrders));
+  const [isDelivering, setIsDelivering] = useState<boolean>(false);
+  // console.log("selectedOrdersNHAA", JSON.stringify(selectedOrders));
 
   // State để lưu trữ các đơn hàng theo trạng thái
   const [ordersByStatus, setOrdersByStatus] = useState<{
@@ -87,7 +87,7 @@ const OrderListDelivery: React.FC = () => {
 
       for (const key in statuses) {
         const params: GetAllOrdersByStatusParams = {
-          shipperId: "22ca9104-2837-4862-a399-1027ae9e0889",
+          shipperId: "584adfc1-b3d2-4aee-b2ee-e9007aca08c5",
           pageNumber: 1,
           pageSize: 10, // Bạn có thể điều chỉnh số lượng theo nhu cầu
           status: statuses[key],
@@ -109,9 +109,21 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
+  // Re-fetch order details when page is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
+
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    console.log("isDeliveringNe", isDelivering);
+
+    if (isDelivering) {
+      fetchOrders();
+      setIsDelivering(false); // Đặt lại isDelivering về false sau khi refetch
+    }
+  }, [isDelivering]);
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {
@@ -123,7 +135,7 @@ const OrderListDelivery: React.FC = () => {
     });
   };
 
-  console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
+  // console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
 
   // Define each tab's content for react-native-tab-view
   const PendingRoute = () => (
@@ -135,6 +147,7 @@ const OrderListDelivery: React.FC = () => {
       onViewDetail={(orderId: string) =>
         navigation.navigate("OrderDetail", { orderId })
       }
+      setIsDelivering={setIsDelivering}
     />
   );
 
@@ -244,7 +257,9 @@ const OrderListDelivery: React.FC = () => {
       {selectedOrders.length >= 2 && !loading && !error && (
         <TouchableOpacity
           className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
-          onPress={() => navigation.navigate("OptimizeDelivery")}
+          onPress={() =>
+            navigation.navigate("OptimizeDelivery", { selectedOrders })
+          }
         >
           <Text className="text-[#A1011A] text-center font-semibold text-lg">
             Tối ưu chặng đường

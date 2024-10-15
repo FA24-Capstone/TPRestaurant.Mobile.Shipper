@@ -7,8 +7,7 @@ interface Delivery {
   id: string;
   color: string;
   point: string;
-  orderNumber: string;
-  status: string;
+  status: number;
 }
 
 interface DeliveryStatusProps {
@@ -17,7 +16,7 @@ interface DeliveryStatusProps {
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderDetail: undefined;
+  OrderDetail: { orderId: string };
 };
 
 const DeliveryStatus: React.FC<DeliveryStatusProps> = ({ deliveries }) => {
@@ -34,23 +33,27 @@ const DeliveryStatus: React.FC<DeliveryStatusProps> = ({ deliveries }) => {
           <TouchableOpacity
             key={delivery.id}
             className="flex-row items-center shadow-md"
-            onPress={() => navigation.navigate("OrderDetail")}
+            onPress={() =>
+              navigation.navigate("OrderDetail", { orderId: delivery.id })
+            }
           >
             <View
               className={`py-2 px-6 mx-1 rounded-lg ${
-                delivery.status === "delivered"
+                delivery.status === 9
                   ? "bg-[#4F970F]"
-                  : delivery.status === "delivering"
+                  : delivery.status === 8
                   ? "bg-[#1D72C0]"
-                  : "bg-[#E3B054]"
+                  : delivery.status === 7
+                  ? "bg-[#E3B054]"
+                  : "bg-gray-400"
               }`}
             >
-              <Text className="text-white font-bold text-lg text-center">
+              <Text className="text-white uppercase font-bold text-lg text-center">
                 {delivery.point}
               </Text>
 
-              <Text className="text-white font-bold text-lg text-center">
-                {delivery.id}
+              <Text className="text-white uppercase  font-bold text-lg text-center">
+                #{delivery.id.slice(0, 8)}
               </Text>
             </View>
 

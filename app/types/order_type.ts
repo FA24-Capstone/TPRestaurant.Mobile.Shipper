@@ -1,17 +1,10 @@
-export interface Order {
-  id: string;
-  duration?: number;
-  address: string;
-  distanceToNextDestination: number;
-  status: Status;
-}
-
 export interface OrderItemProps {
   order: Order;
   selected: boolean;
   onSelect: (orderId: string) => void;
   isPending?: boolean;
   onViewDetail?: (orderId: string) => void; // Cập nhật kiểu
+  setIsDelivering?: (isDelivering: boolean) => void; // Cập nhật kiểu
 }
 //=========== real api ===========
 
@@ -44,7 +37,7 @@ export interface GetOptimalPathResponse {
 export interface OptimalPathResult {
   index: number;
   accountId: string;
-  account: AccountCus;
+  order: Order;
   duration: number;
   distanceToNextDestination: number;
 }
@@ -121,6 +114,39 @@ export interface Order {
   isPrivate: boolean | null;
   orderDetail: OrderDetail;
   itemLeft: number;
+  shipperId?: string;
+  shipper?: Shipper;
+  totalDistance?: string;
+  totalDuration?: string;
+}
+
+export interface Shipper {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dob: any;
+  gender: boolean;
+  address: any;
+  isVerified: boolean;
+  isDeleted: boolean;
+  loyaltyPoint: number;
+  avatar: any;
+  isManuallyCreated: boolean;
+  isDelivering: boolean;
+  id: string;
+  userName: string;
+  normalizedUserName: string;
+  email: string;
+  normalizedEmail: string;
+  emailConfirmed: boolean;
+  passwordHash: any;
+  securityStamp: string;
+  concurrencyStamp: string;
+  phoneNumberConfirmed: boolean;
+  twoFactorEnabled: boolean;
+  lockoutEnd: any;
+  lockoutEnabled: boolean;
+  accessFailedCount: number;
 }
 
 export interface Status {
@@ -155,7 +181,6 @@ export interface Account {
   lockoutEnd: any;
   lockoutEnabled: boolean;
   accessFailedCount: number;
-  distance?: number;
 }
 
 export interface OrderType {
@@ -228,7 +253,7 @@ export interface AssignOrderForShipperResponse {
 // Request body for uploading confirmed order image
 export interface UploadConfirmedOrderImageRequest {
   orderId: string;
-  image: File;
+  image: string; // Adjust the type based on your implementation
 }
 
 // Response for uploading confirmed order image
