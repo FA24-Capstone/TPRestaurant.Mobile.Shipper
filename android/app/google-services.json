@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "94244733994",
+    "project_id": "thienphu-app",
+    "storage_bucket": "thienphu-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:94244733994:android:fe230785a32e966464af53",
+        "android_client_info": {
+          "package_name": "com.hongquan0312.shipperthienphu"
+        }
+      },
+      "oauth_client": [], 
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9g3Ep_k_sAs7zZDCrCAy5It8el_Hittg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

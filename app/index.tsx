@@ -13,7 +13,8 @@ import AppGradient from "@/components/AppGradient";
 import beachImage from "../assets/bg/StartScreen.jpg";
 import { NativeWindStyleSheet } from "nativewind";
 import * as Notifications from "expo-notifications";
-import messaging, { firebase } from "@react-native-firebase/messaging";
+import messaging from "@react-native-firebase/messaging";
+
 import { useEffect } from "react";
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -46,21 +47,14 @@ const App = () => {
     console.log(token);
   };
   const initializeFirebase = async () => {
-    if (!firebase.apps.length) {
-      await firebase.initializeApp({
-        apiKey: "AIzaSyAJKw0In21Lxcsx-eXZmvEQXn6LmmVVyNk",
-        authDomain: "thienphu-app.fxirebaseapp.com",
-        projectId: "thienphu-app",
-        storageBucket: "thienphu-app.appspot.com",
-        messagingSenderId: "94244733994",
-        appId: "1:94244733994:web:702149d32992b71c64af53",
-      });
-    }
+   
     await requestUserPermission();
     await getToken();
   };
-
+useEffect(() => {
   initializeFirebase();
+}
+, []);
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <ImageBackground
