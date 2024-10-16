@@ -21,6 +21,8 @@ interface Delivery {
   address2: string;
   time: string;
   distanceToNextDestination?: string;
+  startDeliveringTime?: string;
+  deliveredTime?: string;
 }
 
 const OptimizeDelivery: React.FC = () => {
@@ -71,12 +73,6 @@ const OptimizeDelivery: React.FC = () => {
               // Cập nhật previousAddress2 cho lần lặp tiếp theo
               previousAddress2 = address2;
 
-              // Chuyển đổi thời gian từ giây sang phút và làm tròn đến số nguyên
-              const durationInMinutes = Math.round(item.duration / 60);
-              const distanceInKm = Math.round(
-                item.distanceToNextDestination / 1000
-              );
-
               return {
                 id: item.order.orderId,
                 point: String.fromCharCode(65 + (item.index - 1)),
@@ -91,8 +87,10 @@ const OptimizeDelivery: React.FC = () => {
                     : "#9A0E1D",
                 address1: address1,
                 address2: address2,
-                time: `${durationInMinutes}p`,
-                distanceToNextDestination: `${distanceInKm}km`,
+                time: item.duration,
+                distanceToNextDestination: item.distanceToNextDestination,
+                startDeliveringTime: item.order.startDeliveringTime,
+                deliveredTime: item.order.deliveredTime,
               };
             }
           );

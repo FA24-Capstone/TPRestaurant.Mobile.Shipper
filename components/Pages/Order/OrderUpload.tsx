@@ -16,7 +16,11 @@ import {
   showErrorMessage,
 } from "@/components/FlashMessageHelpers";
 import { useRoute } from "@react-navigation/native";
-import { uploadConfirmedOrderImage } from "@/api/orderApi";
+import {
+  updateOrderDetailStatus,
+  uploadConfirmedOrderImage,
+} from "@/api/orderApi";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Define the types for navigation routes
 type RootStackParamList = {
@@ -118,14 +122,31 @@ const OrderUpload: React.FC = () => {
         orderId,
         image,
       });
-      console.log("responseUploadne", response);
+      console.log("responseUpload", response);
 
       if (response.isSuccess) {
-        // Adjust based on your API's response structure
         showSuccessMessage(
           "Your delivery proof has been uploaded successfully."
         );
-        navigation.replace("OrderDetail", { orderId });
+
+        // Now, call updateOrderDetailStatus with isSuccessful as true
+        const updateResponse = await updateOrderDetailStatus(orderId, true);
+        console.log("responseUpdateStatus", updateResponse);
+
+        if (updateResponse.isSuccess) {
+          console.log("Order status updated successfully:", updateResponse);
+
+          showSuccessMessage("Đơn hàng này đã được giao!");
+
+          // Finally, navigate to OrderDetail
+          navigation.replace("OrderDetail", { orderId });
+        } else {
+          console.error(
+            "Failed to update order status:",
+            updateResponse.messages
+          );
+          showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
+        }
       } else {
         showErrorMessage(response.messages[0] || "Failed to upload the image.");
       }
@@ -142,71 +163,74 @@ const OrderUpload: React.FC = () => {
   const imageSize = screenWidth; // 2 columns with some spacing
 
   return (
-    <View className="flex-1 bg-white px-4 py-6">
-      {image ? (
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: image }}
+    <>
+      {uploading && <LoadingOverlay visible={uploading} />}
+      <View className="flex-1 bg-white px-4 py-6">
+        {image ? (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: image }}
+              style={{
+                width: imageSize,
+                height: imageSize,
+                borderRadius: 10,
+                margin: "auto",
+              }}
+              resizeMode="contain"
+            />
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={pickImageFromGallery}
             style={{
-              width: imageSize,
-              height: imageSize,
+              width: "100%",
+              height: 200,
+              borderWidth: 1,
+              borderStyle: "dashed",
+              borderColor: "gray",
               borderRadius: 10,
-              margin: "auto",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "#F9F9F9",
             }}
-            resizeMode="contain"
-          />
+          >
+            <MaterialCommunityIcons
+              name="camera-outline"
+              size={40}
+              color="gray"
+            />
+            <Text className="text-gray-600">Take proof of delivery photo</Text>
+          </TouchableOpacity>
+        )}
+
+        <View className="flex-row space-x-2 mt-4">
+          <TouchableOpacity
+            onPress={pickImageFromCamera}
+            className="p-3 rounded bg-gray-300 w-[48%]"
+          >
+            <Text className="text-center text-gray-800">Chụp ảnh</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={pickImageFromGallery}
+            className="p-3 rounded bg-gray-300 w-[48%]"
+          >
+            <Text className="text-center text-gray-800">Chọn từ thư viện</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <TouchableOpacity
-          onPress={pickImageFromGallery}
-          style={{
-            width: "100%",
-            height: 200,
-            borderWidth: 1,
-            borderStyle: "dashed",
-            borderColor: "gray",
-            borderRadius: 10,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "#F9F9F9",
-          }}
-        >
-          <MaterialCommunityIcons
-            name="camera-outline"
-            size={40}
-            color="gray"
-          />
-          <Text className="text-gray-600">Take proof of delivery photo</Text>
-        </TouchableOpacity>
-      )}
 
-      <View className="flex-row space-x-2 mt-4">
-        <TouchableOpacity
-          onPress={pickImageFromCamera}
-          className="p-3 rounded bg-gray-300 w-[48%]"
-        >
-          <Text className="text-center text-gray-800">Chụp ảnh</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={pickImageFromGallery}
-          className="p-3 rounded bg-gray-300 w-[48%]"
-        >
-          <Text className="text-center text-gray-800">Chọn từ thư viện</Text>
-        </TouchableOpacity>
+        <View className="py-4">
+          <TouchableOpacity
+            className="p-4 rounded bg-[#A1011A]"
+            onPress={handleSave}
+          >
+            <Text className="text-white text-center text-lg font-bold">
+              HOÀN THÀNH
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <View className="py-4">
-        <TouchableOpacity
-          className="p-4 rounded bg-[#A1011A]"
-          onPress={handleSave}
-        >
-          <Text className="text-white text-center text-lg font-bold">
-            HOÀN THÀNH
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </>
   );
 };
 

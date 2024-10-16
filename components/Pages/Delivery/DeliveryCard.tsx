@@ -12,6 +12,8 @@ interface Delivery {
   address1: string;
   address2: string;
   distanceToNextDestination?: string;
+  startDeliveringTime?: string;
+  deliveredTime?: string;
 }
 
 interface DeliveryCardProps {
@@ -80,16 +82,20 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({ delivery }) => {
           />
         </View>
 
-        <View className="ml-4 w-[80%]">
+        <View className="ml-4 w-[70%]">
           <Text className=" text-gray-400 font-semibold">
-            11:20 AM,27/09/2024 (Hôm nay)
+            {delivery.startDeliveringTime
+              ? delivery.startDeliveringTime
+              : "(Hôm nay) Không xác định"}
           </Text>
           <Text className=" text-gray-700 text-base font-semibold ">
             {delivery.address1}
           </Text>
 
           <Text className=" text-gray-400 font-semibold mt-6">
-            11:20 AM,27/09/2024 (Hôm nay)
+            {delivery.deliveredTime
+              ? delivery.deliveredTime
+              : "(Hôm nay) Không xác định"}
           </Text>
           <Text className=" text-gray-700 text-base font-semibold">
             {delivery.address2}

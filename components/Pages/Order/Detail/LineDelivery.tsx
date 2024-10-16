@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Image, Linking, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Order } from "@/app/types/order_type";
@@ -11,6 +11,24 @@ interface LineDeliveryProps {
 }
 const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
   const [loading, setLoading] = useState(false);
+  const [startDeliveringTime, setStartDeliveringTime] = useState<Date | null>(
+    null
+  );
+  const [deliveredTime, setDeliveredTime] = useState<Date | null>(null);
+
+  console.log("startDeliveringTime", startDeliveringTime);
+
+  useEffect(() => {
+    if (orderData.statusId === 7) {
+      const currentStartDeliveringTime = new Date(); // Lấy thời gian hiện tại
+      setStartDeliveringTime(currentStartDeliveringTime);
+
+      const calculatedDeliveredTime = moment(currentStartDeliveringTime)
+        .add(durationNumber, "minutes")
+        .toDate();
+      setDeliveredTime(calculatedDeliveredTime);
+    }
+  }, [orderData.statusId]);
 
   const handleMapPress = async () => {
     if (orderData.orderId === undefined) return;
@@ -28,6 +46,12 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
       setLoading(false);
     }
   };
+
+  const durationString = orderData.totalDuration || "0 phút";
+  const durationMatch = durationString.match(/\d+/);
+  const durationNumber = durationMatch ? parseInt(durationMatch[0], 10) : 0;
+  console.log("durationNumber", durationNumber);
+
   return (
     <View className="mb-4">
       <View className="flex-row justify-between">
@@ -50,19 +74,35 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
       </View>
 
       <View className="p-4 border-2 border-zinc-200 rounded-md">
-        {orderData.deliveryTime ? (
+        {orderData.statusId === 7 && startDeliveringTime ? (
           <Text className="text-gray-600 ">
             <Text className="font-semibold text-gray-800">
-              {moment.utc(orderData.deliveryTime).format("hh:mm A, ")}
+              {moment.utc(startDeliveringTime).local().format("hh:mm A, ")}
             </Text>
-            {moment.utc(orderData.deliveryTime).format("DD/MM/YYYY")}{" "}
+            {moment.utc(startDeliveringTime).local().format("DD/MM/YYYY")}{" "}
           </Text>
         ) : (
-          <Text className="text-gray-500 font-semibold">Không xác định</Text>
+          <View>
+            {orderData.startDeliveringTime ? (
+              <Text className="text-gray-600 ">
+                <Text className="font-semibold text-gray-800">
+                  {moment
+                    .utc(orderData.startDeliveringTime)
+                    .format("hh:mm A, ")}
+                </Text>
+                {moment.utc(orderData.startDeliveringTime).format("DD/MM/YYYY")}{" "}
+              </Text>
+            ) : (
+              <Text className="text-gray-500 font-semibold">
+                Không xác định
+              </Text>
+            )}
+          </View>
         )}
+
         <View className="flex-row mt-2 items-center  my-3">
           <Text className=" my-1 text-red-500 font-bold text-lg">
-            {orderData.duration || 0} phút
+            {orderData.totalDuration || "0 phút"}
           </Text>
           <View className="ml-4">
             <Image
@@ -85,21 +125,41 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
             </Text>
           </View>
         </View>
-        {orderData.deliveryTime ? (
+        {orderData.statusId === 7 && deliveredTime ? (
+          <Text className="text-gray-600 ">
+            <Text className="font-semibold text-gray-800">
+              {moment(deliveredTime).format("hh:mm A, ")}
+            </Text>
+            {moment(deliveredTime).format("DD/MM/YYYY")}{" "}
+          </Text>
+        ) : orderData.statusId === 8 ? (
           <Text className="text-gray-600 ">
             <Text className="font-semibold text-gray-800">
               {moment
-                .utc(orderData.deliveryTime)
-                .add(orderData.duration, "minutes")
+                .utc(orderData.startDeliveringTime)
+                .add(durationNumber, "minutes")
                 .format("hh:mm A, ")}
             </Text>
-            {moment
-              .utc(orderData.deliveryTime)
-              .add(orderData.duration, "minutes")
-              .format("DD/MM/YYYY")}{" "}
+            {moment.utc(orderData.deliveredTime).format("DD/MM/YYYY")}{" "}
           </Text>
         ) : (
-          <Text className="text-gray-500 font-semibold">Không xác định</Text>
+          <View>
+            {orderData.deliveredTime ? (
+              <Text className="text-gray-600 ">
+                <Text className="font-semibold text-gray-800">
+                  {moment
+                    .utc(orderData.deliveredTime)
+                    .add(durationNumber, "minutes")
+                    .format("hh:mm A, ")}
+                </Text>
+                {moment.utc(orderData.deliveredTime).format("DD/MM/YYYY")}{" "}
+              </Text>
+            ) : (
+              <Text className="text-gray-500 font-semibold">
+                Không xác định
+              </Text>
+            )}
+          </View>
         )}
       </View>
     </View>
