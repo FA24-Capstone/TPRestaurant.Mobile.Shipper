@@ -8,7 +8,7 @@ interface CustomerInfoProps {
 }
 
 const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerData }) => {
-  console.log("customerData", customerData);
+  // console.log("customerData", customerData);
 
   const statusMapping = {
     6: { colorClass: "bg-cyan-800", text: "Sẵn sàng giao hàng" },

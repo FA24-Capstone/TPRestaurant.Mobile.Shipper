@@ -30,6 +30,7 @@ const getStatusTextAndColor = (status: number) => {
 // Define the types for navigation routes
 type RootStackParamList = {
   OrderDetail: { orderId: string };
+  OrderUpload: { orderId: string };
 };
 
 const OrderItem: React.FC<OrderItemProps> = ({
@@ -94,7 +95,11 @@ const OrderItem: React.FC<OrderItemProps> = ({
     }
   };
 
-  const handleDriveredConfirm = async () => {};
+  const handleDelivered = () => {
+    // console.log("orderData.orderId", orderData.orderId);
+
+    navigation.navigate("OrderUpload", { orderId: order.orderId });
+  };
 
   return (
     <View className=" mt-4 flex-row items-center">
@@ -167,7 +172,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
               <TouchableOpacity className="bg-[#A1011A] w-[45%] py-2 px-4 rounded-lg">
                 <Text
                   className="text-white text-lg text-center font-semibold uppercase"
-                  onPress={handleDriveredConfirm}
+                  onPress={handleDelivered}
                 >
                   Đã giao
                 </Text>

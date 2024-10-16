@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
 import { getAllOrdersByShipper } from "@/api/orderApi";
 import { showErrorMessage } from "@/components/FlashMessageHelpers";
 import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -32,6 +33,13 @@ type RootStackParamList = {
 
 const OrderListDelivery: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  // useRef để theo dõi trạng thái đã tải của từng `status`
+  const loadedStatusRef = useRef({
+    pending: false,
+    delivering: false,
+    delivered: false,
+    cancelled: false,
+  });
 
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
@@ -61,11 +69,15 @@ const OrderListDelivery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Function để fetch orders từ API
-  const fetchOrders = async () => {
+  const fetchOrders = async (
+    statusKey: keyof typeof loadedStatusRef.current
+  ) => {
+    // Kiểm tra nếu dữ liệu đã được tải và không cần tải lại
+    if (loadedStatusRef.current[statusKey] && !isDelivering) return;
+
     setLoading(true);
     setError(null);
     try {
-      // Giả sử statusId 4 là "pending", 6 là "delivering", 9 là "delivered", 10 là "cancelled"
       const statuses: { [key: string]: number } = {
         pending: 7,
         delivering: 8,
@@ -73,34 +85,25 @@ const OrderListDelivery: React.FC = () => {
         cancelled: 10,
       };
 
-      const fetchedOrders: {
-        pending: Order[];
-        delivering: Order[];
-        delivered: Order[];
-        cancelled: Order[];
-      } = {
-        pending: [],
-        delivering: [],
-        delivered: [],
-        cancelled: [],
+      const params: GetAllOrdersByStatusParams = {
+        shipperId: "584adfc1-b3d2-4aee-b2ee-e9007aca08c5",
+        pageNumber: 1,
+        pageSize: 10,
+        status: statuses[statusKey],
       };
 
-      for (const key in statuses) {
-        const params: GetAllOrdersByStatusParams = {
-          shipperId: "584adfc1-b3d2-4aee-b2ee-e9007aca08c5",
-          pageNumber: 1,
-          pageSize: 10, // Bạn có thể điều chỉnh số lượng theo nhu cầu
-          status: statuses[key],
-        };
-        const response: GetAllOrdersByStatusResponse =
-          await getAllOrdersByShipper(params);
-        if (response.isSuccess) {
-          fetchedOrders[key as keyof typeof fetchedOrders] =
-            response.result.items;
-        }
+      const response: GetAllOrdersByStatusResponse =
+        await getAllOrdersByShipper(params);
+      if (response.isSuccess) {
+        setOrdersByStatus((prevOrders) => ({
+          ...prevOrders,
+          [statusKey]: response.result.items,
+        }));
+        // Đánh dấu `status` này là đã được tải
+        loadedStatusRef.current[
+          statusKey as keyof typeof loadedStatusRef.current
+        ] = true;
       }
-
-      setOrdersByStatus(fetchedOrders);
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("Đã có lỗi xảy ra khi tải đơn hàng.");
@@ -109,19 +112,20 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
-  // Re-fetch order details when page is focused
+  // Re-fetch khi trang được focus hoặc `isDelivering` thay đổi
   useFocusEffect(
     useCallback(() => {
-      fetchOrders();
-    }, [])
+      fetchOrders(routes[index].key as keyof typeof loadedStatusRef.current); // Gọi cho `status` hiện tại
+    }, [index, isDelivering])
   );
 
+  // Đặt lại `isDelivering` và refetch dữ liệu khi có thay đổi trạng thái
   useEffect(() => {
-    console.log("isDeliveringNe", isDelivering);
-
     if (isDelivering) {
-      fetchOrders();
-      setIsDelivering(false); // Đặt lại isDelivering về false sau khi refetch
+      // Đánh dấu lại để có thể tải lại
+      loadedStatusRef.current.delivering = false;
+      fetchOrders("delivering");
+      setIsDelivering(false);
     }
   }, [isDelivering]);
 
@@ -138,54 +142,74 @@ const OrderListDelivery: React.FC = () => {
   // console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
 
   // Define each tab's content for react-native-tab-view
-  const PendingRoute = () => (
-    <OrderList
-      orders={ordersByStatus["pending"]}
-      selectedOrders={selectedOrders}
-      onSelectOrder={handleSelectOrder}
-      isPending={true}
-      onViewDetail={(orderId: string) =>
-        navigation.navigate("OrderDetail", { orderId })
-      }
-      setIsDelivering={setIsDelivering}
-    />
-  );
+  const PendingRoute = () =>
+    ordersByStatus.pending.length === 0 ? (
+      <Text className="text-center text-gray-500 mt-4">
+        Chưa có đơn hàng nào
+      </Text>
+    ) : (
+      <OrderList
+        orders={ordersByStatus.pending}
+        selectedOrders={selectedOrders}
+        onSelectOrder={handleSelectOrder}
+        isPending={true}
+        onViewDetail={(orderId) =>
+          navigation.navigate("OrderDetail", { orderId })
+        }
+        setIsDelivering={setIsDelivering}
+      />
+    );
 
-  const DeliveringRoute = () => (
-    <OrderList
-      orders={ordersByStatus["delivering"]}
-      selectedOrders={selectedOrders}
-      onSelectOrder={handleSelectOrder}
-      isPending={false}
-      onViewDetail={(orderId: string) =>
-        navigation.navigate("OrderDetail", { orderId })
-      }
-    />
-  );
+  const DeliveringRoute = () =>
+    ordersByStatus.delivering.length === 0 ? (
+      <Text className="text-center text-gray-500 mt-4">
+        Chưa có đơn hàng nào
+      </Text>
+    ) : (
+      <OrderList
+        orders={ordersByStatus.delivering}
+        selectedOrders={selectedOrders}
+        onSelectOrder={handleSelectOrder}
+        isPending={false}
+        onViewDetail={(orderId) =>
+          navigation.navigate("OrderDetail", { orderId })
+        }
+      />
+    );
 
-  const DeliveredRoute = () => (
-    <OrderList
-      orders={ordersByStatus["delivered"]}
-      selectedOrders={selectedOrders}
-      onSelectOrder={handleSelectOrder}
-      isPending={false}
-      onViewDetail={(orderId: string) =>
-        navigation.navigate("OrderDetail", { orderId })
-      }
-    />
-  );
+  const DeliveredRoute = () =>
+    ordersByStatus.delivered.length === 0 ? (
+      <Text className="text-center text-gray-500 mt-4">
+        Chưa có đơn hàng nào
+      </Text>
+    ) : (
+      <OrderList
+        orders={ordersByStatus.delivered}
+        selectedOrders={selectedOrders}
+        onSelectOrder={handleSelectOrder}
+        isPending={false}
+        onViewDetail={(orderId) =>
+          navigation.navigate("OrderDetail", { orderId })
+        }
+      />
+    );
 
-  const CancelledRoute = () => (
-    <OrderList
-      orders={ordersByStatus["cancelled"]}
-      selectedOrders={selectedOrders}
-      onSelectOrder={handleSelectOrder}
-      isPending={false}
-      onViewDetail={(orderId: string) =>
-        navigation.navigate("OrderDetail", { orderId })
-      }
-    />
-  );
+  const CancelledRoute = () =>
+    ordersByStatus.cancelled.length === 0 ? (
+      <Text className="text-center text-gray-500 mt-4">
+        Chưa có đơn hàng nào
+      </Text>
+    ) : (
+      <OrderList
+        orders={ordersByStatus.cancelled}
+        selectedOrders={selectedOrders}
+        onSelectOrder={handleSelectOrder}
+        isPending={false}
+        onViewDetail={(orderId) =>
+          navigation.navigate("OrderDetail", { orderId })
+        }
+      />
+    );
 
   // Scene mapping for the TabView
   const renderScene = SceneMap({
@@ -199,7 +223,7 @@ const OrderListDelivery: React.FC = () => {
   const renderTabView = () => (
     <View style={{ flex: 1 }}>
       {loading ? (
-        <ActivityIndicator size="large" color="#A1011A" />
+        <LoadingOverlay visible={loading} />
       ) : error ? (
         <Text className="text-red-500 text-center mt-4">{error}</Text>
       ) : (
@@ -229,24 +253,61 @@ const OrderListDelivery: React.FC = () => {
                         | undefined;
                     },
                     i: number
-                  ) => (
-                    <View key={route.key} className="flex-row space-x-4">
-                      <TouchableOpacity
-                        onPress={() => route.key && jumpTo(route.key as string)}
-                        className={`py-2 mr-3 px-4 rounded-lg ${
-                          i === index ? "bg-[#A1011A]" : "bg-gray-200"
-                        }`}
+                  ) => {
+                    const orderCount =
+                      ordersByStatus[route.key as keyof typeof ordersByStatus]
+                        .length;
+                    return (
+                      <View
+                        key={route.key}
+                        className="relative mt-4 flex-row space-x-4"
                       >
-                        <Text
-                          className={`text-center font-semibold text-base ${
-                            i === index ? "text-white" : "text-gray-700"
+                        <TouchableOpacity
+                          onPress={() =>
+                            route.key && jumpTo(route.key as string)
+                          }
+                          className={`py-2 mr-3 px-4 rounded-lg ${
+                            i === index ? "bg-[#A1011A]" : "bg-gray-200"
                           }`}
                         >
-                          {route.title}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )
+                          <Text
+                            className={`text-center font-semibold text-base ${
+                              i === index ? "text-white" : "text-gray-700"
+                            }`}
+                          >
+                            {route.title}
+                          </Text>
+
+                          {/* Badge for displaying the count */}
+                          {orderCount > 0 && (
+                            <View
+                              style={{
+                                position: "absolute",
+                                top: -10,
+                                right: -5,
+                                minWidth: 23,
+                                height: 23,
+                                borderRadius: 10,
+                                backgroundColor: "#EDAA16",
+                                justifyContent: "center",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "white",
+                                  fontSize: 16,
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {orderCount}
+                              </Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  }
                 )}
               </ScrollView>
             </View>

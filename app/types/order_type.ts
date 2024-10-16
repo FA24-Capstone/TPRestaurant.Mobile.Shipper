@@ -38,8 +38,8 @@ export interface OptimalPathResult {
   index: number;
   accountId: string;
   order: Order;
-  duration: number;
-  distanceToNextDestination: number;
+  duration: string;
+  distanceToNextDestination: string;
 }
 
 export interface AccountCus {
@@ -95,7 +95,8 @@ export interface Order {
   validatingImg?: string;
   orderId: string;
   orderDate: string;
-  deliveryTime: string | null;
+  startDeliveringTime: any;
+  deliveredTime: string | any;
   reservationDate: string | null;
   mealTime: string | null;
   endTime: string | null;

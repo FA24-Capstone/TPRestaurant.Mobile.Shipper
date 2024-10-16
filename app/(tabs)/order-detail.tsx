@@ -102,7 +102,11 @@ const OrderDetail = () => {
         {orderData && orderData.order.validatingImg && (
           <View>
             <Text className="font-semibold text-lg text-gray-600 mb-2">
-              Hình ảnh đã giao:
+              Hình ảnh đã giao: {""}
+              <Text className="font-bold text-gray-800">
+                (Shipper: {orderData?.order?.shipper?.firstName}{" "}
+                {orderData?.order?.shipper?.lastName})
+              </Text>
             </Text>
             <ImageGallery image={orderData.order.validatingImg} />
           </View>

@@ -25,10 +25,10 @@ const OrderList: React.FC<OrderListProps> = ({
   // Nếu có limit, chỉ hiển thị số đơn hàng giới hạn, ngược lại hiển thị toàn bộ
   const displayedOrders = limit ? orders.slice(0, limit) : orders;
   // console.log("displayedOrders", displayedOrders);
-  console.log(
-    "ordersId",
-    orders.map((order) => order.orderId)
-  );
+  // console.log(
+  //   "ordersId",
+  //   orders.map((order) => order.orderId)
+  // );
 
   return (
     <>
