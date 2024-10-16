@@ -1,41 +1,66 @@
 import {
   View,
   Text,
-  Image,
   ImageBackground,
-  useWindowDimensions,
   Dimensions,
   TouchableOpacity,
 } from "react-native";
-import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import CustomButton from "@/components/CustomButton";
-import AppGradient from "@/components/AppGradient";
 import { useRouter } from "expo-router";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  withSpring,
-} from "react-native-reanimated";
-
+import Animated, { FadeInDown } from "react-native-reanimated";
+import AppGradient from "@/components/AppGradient";
 import beachImage from "../assets/bg/StartScreen.jpg";
 import { NativeWindStyleSheet } from "nativewind";
-
+import * as Notifications from "expo-notifications";
+import messaging, { firebase } from "@react-native-firebase/messaging";
+import { useEffect } from "react";
 NativeWindStyleSheet.setOutput({
   default: "native",
 });
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
 const App = () => {
   const router = useRouter();
-
   const { width, height } = Dimensions.get("window");
-  console.log(`Width: ${width}, Height: ${height}`);
 
-  const isLandscape = width > height;
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  console.log("isLandscape", isLandscape);
+    if (enabled) {
+      console.log("Authorization status:", authStatus);
+    }
+  }
+  const getToken = async () => {
+    const token = await messaging().getToken();
+    console.log(token);
+  };
+  const initializeFirebase = async () => {
+    if (!firebase.apps.length) {
+      await firebase.initializeApp({
+        apiKey: "AIzaSyAJKw0In21Lxcsx-eXZmvEQXn6LmmVVyNk",
+        authDomain: "thienphu-app.fxirebaseapp.com",
+        projectId: "thienphu-app",
+        storageBucket: "thienphu-app.appspot.com",
+        messagingSenderId: "94244733994",
+        appId: "1:94244733994:web:702149d32992b71c64af53",
+      });
+    }
+    await requestUserPermission();
+    await getToken();
+  };
 
+  initializeFirebase();
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <ImageBackground
@@ -43,17 +68,14 @@ const App = () => {
         resizeMode="cover"
         style={{ flex: 1, width: "100%", height: "100%" }}
       >
-        <AppGradient
-          // Background Linear Gradient
-          colors={["#ffffff00", "#ffffff00"]}
-        >
+        <AppGradient colors={["#ffffff00", "#ffffff00"]}>
           <SafeAreaView className="flex flex-1 px-1 justify-between">
             <Animated.View
               entering={FadeInDown.delay(300)
                 .mass(0.5)
                 .stiffness(80)
                 .springify(20)}
-            ></Animated.View>
+            />
 
             <Animated.View
               entering={FadeInDown.delay(300)
@@ -63,17 +85,13 @@ const App = () => {
             >
               <TouchableOpacity
                 activeOpacity={0.7}
-                className={`bg-[#9A0E1D] mb-10 rounded-xl min-h-[62px] justify-center items-center `}
+                className={`bg-[#9A0E1D] mb-10 rounded-xl min-h-[62px] justify-center items-center`}
                 onPress={() => router.push("/(auths)/login")}
               >
                 <Text className={`text-white font-semibold text-xl uppercase`}>
-                  ĐĂNG NHẬP{" "}
+                  ĐĂNG NHẬP
                 </Text>
               </TouchableOpacity>
-              {/* <CustomButton
-                onPress={() => router.push("/(auths)/login")}
-                title="ĐĂNG NHẬP"
-              /> */}
             </Animated.View>
 
             <StatusBar style="light" />

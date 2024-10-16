@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "shipper-thienphu",
+    "slug": "shipper-thienphu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,17 +14,32 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "gooogleServicesFile": "./GoogleService-Info.plist",
+      "bundleIdentifier": "com.hongquan0312.shipperthienphu"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#ffffff",
+        "googleServicesFile": "./google-services.json"
+      },
+      "package": "com.hongquan0312.shipperthienphu"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-font"]
+    "plugins": ["expo-router", "expo-font"],
+    "extra": {
+      "eas": {
+        "projectId": "a67efbab-e073-4a16-af67-c7f2c8fd8c63"
+      },
+      "apiKey": "AIzaSyAJKw0In21Lxcsx-eXZmvEQXn6LmmVVyNk",
+      "authDomain": "thienphu-app.fxirebaseapp.com",
+      "projectId": "thienphu-app",
+      "storageBucket": "thienphu-app.appspot.com",
+      "messagingSenderId": "94244733994",
+      "appId": "1:94244733994:web:702149d32992b71c64af53"
+    }
   }
 }
