@@ -22,6 +22,7 @@ import { getAllOrdersByShipper } from "@/api/orderApi";
 import { showErrorMessage } from "@/components/FlashMessageHelpers";
 import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -69,11 +70,13 @@ const OrderListDelivery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Function để fetch orders từ API
+  // Function để fetch orders từ API
   const fetchOrders = async (
-    statusKey: keyof typeof loadedStatusRef.current
+    statusKey: keyof typeof loadedStatusRef.current,
+    forceRefresh: boolean = false
   ) => {
     // Kiểm tra nếu dữ liệu đã được tải và không cần tải lại
-    if (loadedStatusRef.current[statusKey] && !isDelivering) return;
+    if (!forceRefresh && loadedStatusRef.current[statusKey]) return;
 
     setLoading(true);
     setError(null);
@@ -100,9 +103,7 @@ const OrderListDelivery: React.FC = () => {
           [statusKey]: response.result.items,
         }));
         // Đánh dấu `status` này là đã được tải
-        loadedStatusRef.current[
-          statusKey as keyof typeof loadedStatusRef.current
-        ] = true;
+        loadedStatusRef.current[statusKey] = true;
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -112,22 +113,41 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
-  // Re-fetch khi trang được focus hoặc `isDelivering` thay đổi
-  useFocusEffect(
-    useCallback(() => {
-      fetchOrders(routes[index].key as keyof typeof loadedStatusRef.current); // Gọi cho `status` hiện tại
-    }, [index, isDelivering])
-  );
+  // Fetch tất cả các trạng thái ban đầu khi trang được mở
+  useEffect(() => {
+    Object.keys(loadedStatusRef.current).forEach((key) => {
+      fetchOrders(key as keyof typeof loadedStatusRef.current);
+    });
+  }, []);
 
-  // Đặt lại `isDelivering` và refetch dữ liệu khi có thay đổi trạng thái
+  // Refetch khi `isDelivering` thay đổi để tải lại đơn hàng "Đang giao"
   useEffect(() => {
     if (isDelivering) {
       // Đánh dấu lại để có thể tải lại
       loadedStatusRef.current.delivering = false;
-      fetchOrders("delivering");
+      fetchOrders("pending", true); // `forceRefresh` để bắt buộc tải lại
+      fetchOrders("delivering", true); // `forceRefresh` để bắt buộc tải lại
       setIsDelivering(false);
     }
   }, [isDelivering]);
+
+  // Re-fetch dữ liệu khi chuyển tab (dùng cho các trường hợp ngoại lệ)
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders(routes[index].key as keyof typeof loadedStatusRef.current);
+    }, [index])
+  );
+
+  // Refetch tất cả trạng thái khi nhấn nút "Tải lại"
+  const handleReload = () => {
+    Object.keys(loadedStatusRef.current).forEach((key) => {
+      loadedStatusRef.current[key as keyof typeof loadedStatusRef.current] =
+        false; // Đánh dấu tất cả trạng thái là chưa tải
+    });
+    Object.keys(loadedStatusRef.current).forEach((key) => {
+      fetchOrders(key as keyof typeof loadedStatusRef.current, true); // Gọi fetch với forceRefresh = true
+    });
+  };
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {
@@ -223,7 +243,7 @@ const OrderListDelivery: React.FC = () => {
   const renderTabView = () => (
     <View style={{ flex: 1 }}>
       {loading ? (
-        <LoadingOverlay visible={loading} />
+        <ActivityIndicator size="large" color="#A1011A" />
       ) : error ? (
         <Text className="text-red-500 text-center mt-4">{error}</Text>
       ) : (
@@ -233,7 +253,21 @@ const OrderListDelivery: React.FC = () => {
           onIndexChange={setIndex}
           initialLayout={initialLayout}
           renderTabBar={({ navigationState, jumpTo }) => (
-            <View className="flex-row mx-4 my-4">
+            <View className="mx-4">
+              {/* Nút Tải lại */}
+              <TouchableOpacity
+                onPress={handleReload}
+                className="mx-4 mt-2 flex-row justify-end items-center"
+              >
+                <MaterialCommunityIcons
+                  name="reload"
+                  size={24}
+                  color="#A1011A"
+                />
+                <Text className="text-[#A1011A] ml-2 text-center font-semibold text-base">
+                  Tải lại
+                </Text>
+              </TouchableOpacity>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {navigationState.routes.map(
                   (
