@@ -1,5 +1,6 @@
 import { getAccountByUserId } from "@/api/profileApi";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
@@ -13,6 +14,8 @@ import {
 } from "react-native";
 
 const SettingScreen: React.FC = () => {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     darkMode: false,
     emailNotifications: true,
@@ -115,7 +118,12 @@ const SettingScreen: React.FC = () => {
             />
           </TouchableOpacity>
 
-          <View style={styles.row}>
+          <TouchableOpacity
+            onPress={() => {
+              router.push("/list-dish");
+            }}
+            style={styles.row}
+          >
             <View style={[styles.rowIcon, { backgroundColor: "#EDAA16" }]}>
               <Entypo
                 name="book"
@@ -130,7 +138,7 @@ const SettingScreen: React.FC = () => {
               name="chevron-right"
               size={20}
             />
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: "#38C959" }]}>
