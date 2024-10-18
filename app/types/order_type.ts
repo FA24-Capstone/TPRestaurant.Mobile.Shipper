@@ -37,9 +37,9 @@ export interface GetOptimalPathResponse {
 export interface OptimalPathResult {
   index: number;
   accountId: string;
-  order: Order;
+  orders: Order[];
   duration: string;
-  distanceToNextDestination: string;
+  distanceFromPreviousDestination: string;
 }
 
 export interface AccountCus {
@@ -96,6 +96,7 @@ export interface Order {
   orderId: string;
   orderDate: string;
   startDeliveringTime: any;
+  assignedTime: any;
   deliveredTime: string | any;
   reservationDate: string | null;
   mealTime: string | null;
@@ -117,8 +118,8 @@ export interface Order {
   itemLeft: number;
   shipperId?: string;
   shipper?: Shipper;
-  totalDistance?: string;
-  totalDuration?: string;
+  totalDistance?: number;
+  totalDuration?: number;
 }
 
 export interface Shipper {
@@ -127,7 +128,7 @@ export interface Shipper {
   phoneNumber: string;
   dob: any;
   gender: boolean;
-  address: any;
+  address: string;
   isVerified: boolean;
   isDeleted: boolean;
   loyaltyPoint: number;
@@ -160,21 +161,22 @@ export interface Account {
   firstName: string;
   lastName: string;
   phoneNumber: string;
-  dob: string | null;
+  dob: any;
   gender: boolean;
   address: string;
   isVerified: boolean;
   isDeleted: boolean;
   loyaltyPoint: number;
-  avatar: string | null;
+  avatar: any;
   isManuallyCreated: boolean;
+  isDelivering: boolean;
   id: string;
   userName: string;
   normalizedUserName: string;
   email: string;
   normalizedEmail: string;
   emailConfirmed: boolean;
-  passwordHash: string | null;
+  passwordHash: any;
   securityStamp: string;
   concurrencyStamp: string;
   phoneNumberConfirmed: boolean;
@@ -410,3 +412,32 @@ export interface Combo {
   endDate: string;
 }
 //
+
+// =====   DELIVERY OPTIMAL PATH =============================================
+// Define a new interface for grouped deliveries
+export interface DeliveryGroup {
+  id?: string;
+  point: string;
+  status: number;
+  color: string;
+  time: string;
+  address1: string;
+  address2: string;
+  distanceToNextDestination?: string;
+  startDeliveringTime?: string;
+  deliveredTime?: string;
+  orders: Delivery[]; // Array of orders for groups with multiple deliveries
+}
+
+export interface Delivery {
+  id: string;
+  status: number;
+  color: string;
+  time: string;
+  distanceToNextDestination?: string;
+  startDeliveringTime?: string;
+  deliveredTime?: string;
+  order: Order;
+  address1: string;
+  address2: string;
+}

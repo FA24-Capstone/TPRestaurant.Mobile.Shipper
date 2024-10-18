@@ -118,6 +118,9 @@ const OrderItem: React.FC<OrderItemProps> = ({
         }`}
       >
         <View className="flex-1 ">
+          <Text className="text-gray-400 text-sm font-medium italic">
+            {order.assignedTime || "Không xác định"}
+          </Text>
           <View className="flex-row justify-between items-center">
             <Text
               className="font-bold text-lg w-[80%] uppercase"
