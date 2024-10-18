@@ -47,13 +47,16 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
     }
   };
 
-  const durationString = orderData.totalDuration || "0 phút";
+  const durationString = String(orderData.totalDuration || "0 phút");
   const durationMatch = durationString.match(/\d+/);
   const durationNumber = durationMatch ? parseInt(durationMatch[0], 10) : 0;
   console.log("durationNumber", durationNumber);
 
   return (
     <View className="mb-4">
+      <Text className="text-gray-400 text-sm font-medium italic">
+        {orderData.assignedTime || "Không xác định"}
+      </Text>
       <View className="flex-row justify-between">
         <Text className="font-medium text-lg text-gray-700 mb-4">
           Mã đơn Order:

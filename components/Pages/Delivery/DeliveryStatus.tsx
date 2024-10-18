@@ -1,17 +1,18 @@
+import { DeliveryGroup } from "@/app/types/order_type";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useNavigation } from "expo-router";
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 
-interface Delivery {
-  id: string;
-  color: string;
-  point: string;
-  status: number;
-}
+// interface Delivery {
+//   id: string;
+//   color: string;
+//   point: string;
+//   status: number;
+// }
 
 interface DeliveryStatusProps {
-  deliveries: Delivery[];
+  deliveries: DeliveryGroup[];
 }
 
 // Define the types for navigation routes
@@ -31,10 +32,12 @@ const DeliveryStatus: React.FC<DeliveryStatusProps> = ({ deliveries }) => {
       <View className="flex-row my-3 items-center ">
         {deliveries.map((delivery, index) => (
           <TouchableOpacity
-            key={delivery.id}
+            key={delivery.orders[0].id}
             className="flex-row items-center shadow-md"
             onPress={() =>
-              navigation.navigate("OrderDetail", { orderId: delivery.id })
+              navigation.navigate("OrderDetail", {
+                orderId: delivery.orders[0].id,
+              })
             }
           >
             <View
@@ -53,7 +56,7 @@ const DeliveryStatus: React.FC<DeliveryStatusProps> = ({ deliveries }) => {
               </Text>
 
               <Text className="text-white uppercase  font-bold text-lg text-center">
-                #{delivery.id.slice(0, 8)}
+                #{delivery.orders.map((id) => id.id.slice(0, 8)).join(", ")}
               </Text>
             </View>
 
