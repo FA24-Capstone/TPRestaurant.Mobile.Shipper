@@ -14,7 +14,7 @@ import beachImage from "../assets/bg/StartScreen.jpg";
 import { NativeWindStyleSheet } from "nativewind";
 import * as Notifications from "expo-notifications";
 import messaging from "@react-native-firebase/messaging";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
 NativeWindStyleSheet.setOutput({
   default: "native",
@@ -39,22 +39,23 @@ const App = () => {
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     if (enabled) {
-      console.log("Authorization status:", authStatus);
+      getToken();
     }
   }
   const getToken = async () => {
     const token = await messaging().getToken();
-    console.log(token);
+    if (token) {
+      await AsyncStorage.setItem("device_token", token);
+      console.log("Your Firebase Token is:", token);
+    }
   };
-  const initializeFirebase = async () => {
-   
-    await requestUserPermission();
-    await getToken();
-  };
-useEffect(() => {
-  initializeFirebase();
-}
-, []);
+
+  useEffect(() => {
+    requestUserPermission();
+  }, []);
+  messaging().setBackgroundMessageHandler(async (message) => {
+    console.log(message);
+  });
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <ImageBackground
