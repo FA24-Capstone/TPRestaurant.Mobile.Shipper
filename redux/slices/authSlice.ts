@@ -1,23 +1,22 @@
+import { Account } from "@/app/types/order_type";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
   isLoggedIn: boolean;
   token: string | null;
-  deviceId: string | null;
-  deviceCode: string | null;
-  tableId: string | null;
-  tableName: string | null;
-  mainRole: string | null; // Thêm thuộc tính này để giữ mainRole
+  refreshToken: string | null;
+  mainRole: string | null;
+  account: Account | null;
+  deviceResponse: any | null;
 }
 
 const initialState: AuthState = {
   isLoggedIn: false,
   token: null,
-  deviceId: null,
-  deviceCode: null,
-  tableId: null,
-  tableName: null,
+  refreshToken: null,
   mainRole: null,
+  account: null,
+  deviceResponse: null,
 };
 
 const authSlice = createSlice({
@@ -28,35 +27,32 @@ const authSlice = createSlice({
       state,
       action: PayloadAction<{
         token: string;
-        deviceResponse: {
-          deviceId: string;
-          deviceCode: string;
-          tableId: string;
-          tableName: string;
-          mainRole: string;
-        };
+        refreshToken: string;
+        mainRole: string;
+        account: Account;
+        deviceResponse: any;
       }>
     ) {
       state.isLoggedIn = true;
       state.token = action.payload.token;
-      state.deviceId = action.payload.deviceResponse.deviceId;
-      state.deviceCode = action.payload.deviceResponse.deviceCode;
-      state.tableId = action.payload.deviceResponse.tableId;
-      state.tableName = action.payload.deviceResponse.tableName;
-      state.mainRole = action.payload.deviceResponse.mainRole;
+      state.refreshToken = action.payload.refreshToken;
+      state.mainRole = action.payload.mainRole;
+      state.account = action.payload.account;
+      state.deviceResponse = action.payload.deviceResponse;
+    },
+    setProfile(state, action: PayloadAction<Account>) {
+      state.account = action.payload;
     },
     logout(state) {
       state.isLoggedIn = false;
       state.token = null;
-      state.deviceId = null;
-      state.deviceCode = null;
-      state.tableId = null;
-      state.tableName = null;
+      state.refreshToken = null;
       state.mainRole = null;
+      state.account = null;
+      state.deviceResponse = null;
     },
   },
 });
 
-export const { login, logout } = authSlice.actions;
-
+export const { login, setProfile, logout } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,4 +1,4 @@
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
@@ -6,94 +6,104 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  Image,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { showSuccessMessage } from "@/components/FlashMessageHelpers";
+import { styled } from "nativewind";
+import { sendOtp } from "@/api/loginApi";
+import shipperImage from "../../assets/bg/imageShipper.jpg";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
+import LoadingOverlay from "@/components/LoadingOverlay";
+
+const StyledView = styled(View);
+const StyledText = styled(Text);
+const StyledTextInput = styled(TextInput);
+const StyledTouchableOpacity = styled(TouchableOpacity);
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [rightIcon, setRightIcon] = useState<"eye" | "eye-off">("eye");
-  const [passwordVisibility, setPasswordVisibility] = useState(true);
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+
   const router = useRouter();
 
-  const handlePasswordVisibility = () => {
-    setRightIcon(rightIcon === "eye" ? "eye-off" : "eye");
-    setPasswordVisibility(!passwordVisibility);
-  };
+  // Handle sending OTP
+  const handleSendOtp = async () => {
+    if (!phoneNumber) {
+      showErrorMessage("Please enter a valid phone number.");
+      return;
+    }
 
-  const handleLogin = async () => {
-    showSuccessMessage("Đăng nhập thành công!");
-    router.replace("/home-screen");
+    try {
+      setLoading(true); // Start loading
+      await sendOtp(phoneNumber);
+      showSuccessMessage("OTP sent successfully.");
+
+      // Navigate to OTP verification screen and pass the phone number
+      router.push({
+        pathname: "/OTP",
+        params: { phoneNumber },
+      });
+    } catch (error) {
+      showErrorMessage("Failed to send OTP. Please try again.");
+      console.error("Error sending OTP:", error);
+    } finally {
+      setLoading(false); // Stop loading
+    }
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={{ flex: 1 }}
-      className="bg-[#A1011A] pt-10"
-    >
-      <View className="flex w-full items-center h-full mx-auto my-auto bg-[#A1011A]">
-        <View className="w-full h-full mx-auto my-auto p-6">
-          {/* Back button */}
-          <TouchableOpacity
-            className=" p-2 rounded-full bg-white w-10"
-            onPress={() => router.back()}
-          >
-            <Feather name="arrow-left" size={24} color="#A1011A" />
-          </TouchableOpacity>
-
+    <>
+      {loading && <LoadingOverlay visible={loading} />}
+      {/* Loading overlay component */}
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <StyledView className="flex-1 bg-white justify-center px-4 relative">
+          <Image
+            source={shipperImage}
+            resizeMode="cover"
+            style={{ width: "100%", height: 360, marginBottom: 50 }}
+          />
           {/* Header text */}
-          <View className="mt-20 mb-10">
-            <Text className="text-3xl font-bold text-white">
+          <StyledView className="mb-8 items-center">
+            <StyledText className="text-3xl font-bold text-[#A1011A] mb-2">
               Chào mừng quay trở lại
-            </Text>
-            <Text className="text-base mt-4 text-white">
-              Please input your information
-            </Text>
-          </View>
+            </StyledText>
+            <StyledText className="text-base text-gray-700">
+              Please input your phone number
+            </StyledText>
+          </StyledView>
 
           {/* Phone input */}
-          <View className="mb-8">
-            <TextInput
-              placeholder="Nhập số điện thoại"
-              placeholderTextColor="#ffffff"
-              value={username}
-              onChangeText={setUsername}
-              className="border-[1px] border-[#FFFFFF] px-4 py-4 rounded-lg text-white text-lg bg-transparent"
-            />
+          <View className="flex-row items-center gap-2 mb-4">
+            <Text className="font-semibold text-[#A1011A] text-2xl">+84</Text>
+            <StyledView className="w-[80%]">
+              <StyledTextInput
+                placeholder="Nhập số điện thoại"
+                placeholderTextColor="#A1011A"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                className="w-full px-4 py-3 border border-[#A1011A] rounded-lg text-[#A1011A] text-lg bg-transparent"
+              />
+            </StyledView>
           </View>
 
-          {/* Password input */}
-          <View className="mb-4 relative">
-            <TextInput
-              placeholder="Mật khẩu"
-              placeholderTextColor="#ffffff"
-              secureTextEntry={passwordVisibility}
-              value={password}
-              onChangeText={setPassword}
-              className="border-[1px] border-[#FFFFFF] px-4 py-4 rounded-lg text-white text-lg bg-transparent"
-              style={{ paddingRight: 40 }}
-            />
-            <TouchableOpacity
-              onPress={handlePasswordVisibility}
-              className="absolute right-4 top-4"
-            >
-              <Feather name={rightIcon} size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Login button */}
-          <TouchableOpacity
-            className="bg-white py-4 rounded-lg mt-4"
-            onPress={handleLogin}
+          {/* Fixed Login Button */}
+          <StyledTouchableOpacity
+            className="w-full py-4 bg-[#A1011A] rounded-lg absolute bottom-0 left-0"
+            style={{ margin: 16 }}
+            onPress={handleSendOtp}
+            disabled={loading} // Disable button when loading
           >
-            <Text className="text-center text-[#A1011A] font-bold text-lg">
-              ĐĂNG NHẬP
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+            <StyledText className="text-center text-white font-bold text-lg">
+              GỬI OTP
+            </StyledText>
+          </StyledTouchableOpacity>
+        </StyledView>
+      </ScrollView>
+    </>
   );
 };
 

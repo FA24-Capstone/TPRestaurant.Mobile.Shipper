@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Button,
 } from "react-native";
 import { TabView, SceneMap } from "react-native-tab-view";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
@@ -18,11 +19,15 @@ import {
   GetAllOrdersByStatusResponse,
   Order,
 } from "../types/order_type";
-import { getAllOrdersByShipper } from "@/api/orderApi";
-import { showErrorMessage } from "@/components/FlashMessageHelpers";
+import { getAllOrdersByShipper, updateOrderDetailStatus } from "@/api/orderApi";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Modal } from "react-native-paper";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -50,6 +55,8 @@ const OrderListDelivery: React.FC = () => {
     { key: "delivered", title: "Đã giao" },
     { key: "cancelled", title: "Đã hủy" },
   ]);
+
+  const isPendingTab = routes[index].key === "pending";
   const [isDelivering, setIsDelivering] = useState<boolean>(false);
   // console.log("selectedOrdersNHAA", JSON.stringify(selectedOrders));
 
@@ -68,6 +75,8 @@ const OrderListDelivery: React.FC = () => {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [processing, setProcessing] = useState<boolean>(false);
 
   // Function để fetch orders từ API
   // Function để fetch orders từ API
@@ -131,6 +140,16 @@ const OrderListDelivery: React.FC = () => {
     }
   }, [isDelivering]);
 
+  // Automatically select all pending orders when in "Pending" tab
+  useEffect(() => {
+    if (isPendingTab && ordersByStatus.pending.length > 0) {
+      const allPendingOrderIds = ordersByStatus.pending.map(
+        (order) => order.orderId
+      );
+      setSelectedOrders(allPendingOrderIds);
+    }
+  }, [isPendingTab, ordersByStatus.pending]);
+
   // Re-fetch dữ liệu khi chuyển tab (dùng cho các trường hợp ngoại lệ)
   useFocusEffect(
     useCallback(() => {
@@ -159,6 +178,80 @@ const OrderListDelivery: React.FC = () => {
     });
   };
 
+  const handleOptimizePress = () => {
+    if (isPendingTab) {
+      setModalVisible(true);
+    } else {
+      navigation.navigate("OptimizeDelivery", { selectedOrders });
+    }
+  };
+
+  const handleConfirmModal = async () => {
+    setProcessing(true);
+    const allPendingOrders = ordersByStatus.pending.map(
+      (order) => order.orderId
+    );
+
+    try {
+      // Perform all API calls in parallel
+      const updatePromises = allPendingOrders.map((orderId) =>
+        updateOrderDetailStatus(orderId, true)
+      );
+
+      const responses = await Promise.all(updatePromises);
+
+      // Check if all updates were successful
+      const allSuccess = responses.every((response) => response.isSuccess);
+
+      if (allSuccess) {
+        showSuccessMessage("Tất cả đơn hàng đã được giao ngay thành công!");
+        setIsDelivering(true); // Trigger re-fetching of orders
+        setModalVisible(false);
+        navigation.navigate("OptimizeDelivery", {
+          selectedOrders: allPendingOrders,
+        });
+      } else {
+        const failedOrders = responses
+          .map((response, index) => ({
+            response,
+            orderId: allPendingOrders[index],
+          }))
+          .filter((item) => !item.response.isSuccess)
+          .map((item) => item.orderId);
+
+        showErrorMessage(
+          `Đã có lỗi xảy ra với đơn hàng: ${failedOrders.join(
+            ", "
+          )}. Vui lòng thử lại.`
+        );
+        setModalVisible(false);
+      }
+    } catch (error) {
+      console.error("Error updating order statuses:", error);
+      showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau.");
+      setModalVisible(false);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleCancelModal = () => {
+    setModalVisible(false);
+
+    if (isPendingTab) {
+      // Optimize all pending orders
+      const allPendingOrders = ordersByStatus.pending.map(
+        (order) => order.orderId
+      );
+      navigation.navigate("OptimizeDelivery", {
+        selectedOrders: allPendingOrders,
+      });
+    } else {
+      // Optimize selected orders
+      navigation.navigate("OptimizeDelivery", { selectedOrders });
+    }
+  };
+
   // console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
 
   // Define each tab's content for react-native-tab-view
@@ -172,7 +265,6 @@ const OrderListDelivery: React.FC = () => {
         orders={ordersByStatus.pending}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
-        isPending={true}
         onViewDetail={(orderId) =>
           navigation.navigate("OrderDetail", { orderId })
         }
@@ -190,7 +282,6 @@ const OrderListDelivery: React.FC = () => {
         orders={ordersByStatus.delivering}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
-        isPending={false}
         onViewDetail={(orderId) =>
           navigation.navigate("OrderDetail", { orderId })
         }
@@ -207,7 +298,6 @@ const OrderListDelivery: React.FC = () => {
         orders={ordersByStatus.delivered}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
-        isPending={false}
         onViewDetail={(orderId) =>
           navigation.navigate("OrderDetail", { orderId })
         }
@@ -224,7 +314,6 @@ const OrderListDelivery: React.FC = () => {
         orders={ordersByStatus.cancelled}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
-        isPending={false}
         onViewDetail={(orderId) =>
           navigation.navigate("OrderDetail", { orderId })
         }
@@ -349,18 +438,58 @@ const OrderListDelivery: React.FC = () => {
         />
       )}
       {/* Show optimization button if two or more orders are selected */}
-      {selectedOrders.length >= 2 && !loading && !error && (
+
+      {isPendingTab && selectedOrders.length >= 2 && !loading && !error && (
         <TouchableOpacity
           className="bg-white border-[#A1011A] border-2 py-3 mx-4 rounded-lg my-4"
-          onPress={() =>
-            navigation.navigate("OptimizeDelivery", { selectedOrders })
-          }
+          onPress={handleOptimizePress}
         >
           <Text className="text-[#A1011A] text-center font-semibold text-lg">
-            Tối ưu chặng đường
+            Tối ưu chặng đường và giao ngay
           </Text>
         </TouchableOpacity>
       )}
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={modalVisible}
+        onDismiss={() => setModalVisible(false)}
+        contentContainerStyle={{
+          backgroundColor: "white",
+          padding: 24,
+          marginHorizontal: 16,
+          borderRadius: 8,
+        }}
+      >
+        <Text className="text-lg font-bold text-center mb-4 uppercase">
+          Xác nhận giao ngay
+        </Text>
+        <Text className="text-base text-center mb-6">
+          Bạn có xác nhận giao ngay tất cả đơn hàng này không?
+        </Text>
+        {processing ? (
+          <ActivityIndicator size="large" color="#A1011A" />
+        ) : (
+          <View className="flex-row justify-around">
+            <TouchableOpacity
+              className={`w-[45%] bg-gray-600 py-2 rounded-lg mt-2`}
+              onPress={handleCancelModal}
+            >
+              <Text className="text-white text-center uppercase font-semibold text-base">
+                Chưa, đợi chút
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`w-[45%] bg-[#FFA500] py-2 rounded-lg mt-2`}
+              onPress={handleConfirmModal}
+            >
+              <Text className="text-white text-center uppercase font-semibold text-base">
+                Có
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </Modal>
     </View>
   );
 
