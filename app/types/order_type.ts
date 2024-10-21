@@ -77,7 +77,7 @@ export interface GetAllOrdersByStatusParams {
   // orderType?: number;
   pageNumber: number;
   pageSize: number;
-  status: number;
+  status?: number;
 }
 
 // Response for getting all orders by status
@@ -426,6 +426,7 @@ export interface DeliveryGroup {
   distanceToNextDestination?: string;
   startDeliveringTime?: string;
   deliveredTime?: string;
+  assignedTime?: string;
   orders: Delivery[]; // Array of orders for groups with multiple deliveries
 }
 
@@ -437,6 +438,7 @@ export interface Delivery {
   distanceToNextDestination?: string;
   startDeliveringTime?: string;
   deliveredTime?: string;
+  assignedTime?: string;
   order: Order;
   address1: string;
   address2: string;

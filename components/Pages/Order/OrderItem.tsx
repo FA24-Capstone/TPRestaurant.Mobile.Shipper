@@ -10,6 +10,7 @@ import {
   showErrorMessage,
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
+import moment from "moment-timezone";
 
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
 const getStatusTextAndColor = (status: number) => {
@@ -104,14 +105,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
   return (
     <View className=" mt-4 flex-row items-center">
       {/* Checkbox để chọn đơn */}
-      {isPending && (
-        <Checkbox
-          status={selected ? "checked" : "unchecked"}
-          onPress={() => onSelect(order.orderId)}
-          color="#A1011A"
-          uncheckedColor="gray"
-        />
-      )}
+
       <View
         className={`bg-[#FAFAFA] p-3 rounded-lg shadow ${
           isPending ? "w-[90%]" : "w-full"
@@ -119,7 +113,10 @@ const OrderItem: React.FC<OrderItemProps> = ({
       >
         <View className="flex-1 ">
           <Text className="text-gray-400 text-sm font-medium italic">
-            {order.assignedTime || "Không xác định"}
+            {moment
+              .utc(order.assignedTime)
+              .local()
+              .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
           </Text>
           <View className="flex-row justify-between items-center">
             <Text

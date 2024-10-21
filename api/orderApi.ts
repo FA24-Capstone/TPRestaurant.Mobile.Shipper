@@ -88,19 +88,27 @@ export const getAllOrdersByShipper = async (
   try {
     console.log("getAllOrdersByShipper params:", params);
 
+    // Tạo một đối tượng params linh hoạt
+    const queryParams: any = {
+      shipperId: params.shipperId,
+      pageNumber: params.pageNumber,
+      pageSize: params.pageSize,
+    };
+
+    // Chỉ thêm status nếu có
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+
     const response = await axios.get<GetAllOrdersByStatusResponse>(
-      `${API_URL}/order/get-all-order-by-shipper-id/${params.shipperId}/${params.pageNumber}/${params.pageSize}?status=${params.status}`,
+      `${API_URL}/order/get-all-order-by-shipper-id/${params.shipperId}/${params.pageNumber}/${params.pageSize}`,
       {
-        params: {
-          shipperId: params.shipperId,
-          status: params.status,
-        },
+        params: queryParams,
         headers: {
           "Content-Type": "application/json",
         },
       }
     );
-    // console.log("API response for getAllOrdersByshipper:", response.data);
 
     return response.data;
   } catch (error) {

@@ -1,4 +1,6 @@
 import { getAccountByUserId } from "@/api/profileApi";
+import { logout } from "@/redux/slices/authSlice";
+import { RootState } from "@/redux/store";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -11,10 +13,18 @@ import {
   TouchableOpacity,
   Switch,
   Image,
+  Alert,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
+
+  // Get accountId from Redux state
+  const accountId = useSelector((state: RootState) => state.auth.account?.id);
+
+  console.log("accountId", accountId);
 
   const [form, setForm] = useState({
     darkMode: false,
@@ -32,25 +42,46 @@ const SettingScreen: React.FC = () => {
   useEffect(() => {
     const fetchAccount = async () => {
       try {
-        const userId = "584adfc1-b3d2-4aee-b2ee-e9007aca08c5";
-        const response = await getAccountByUserId(userId);
-        if (response && response.isSuccess) {
-          const { firstName, lastName, email, phoneNumber, avatar } =
-            response.result;
-          setUser({
-            firstName: firstName ?? "",
-            lastName: lastName ?? "",
-            email: email ?? "",
-            phoneNumber: phoneNumber ?? "",
-            avatar: avatar ?? "",
-          });
+        if (accountId) {
+          const response = await getAccountByUserId(accountId);
+          if (response && response.isSuccess) {
+            const { firstName, lastName, email, phoneNumber, avatar } =
+              response.result;
+            setUser({
+              firstName: firstName ?? "",
+              lastName: lastName ?? "",
+              email: email ?? "",
+              phoneNumber: phoneNumber ?? "",
+              avatar: avatar ?? "",
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch account data:", error);
       }
     };
     fetchAccount();
-  }, []);
+  }, [accountId]); // Add accountId as a dependency
+
+  // Handle logout
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: () => {
+            dispatch(logout());
+            router.replace("/login");
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -196,6 +227,15 @@ const SettingScreen: React.FC = () => {
               name="chevron-right"
               size={20}
             />
+          </TouchableOpacity>
+          {/* Logout Button */}
+          <TouchableOpacity
+            className="bg-white border-[#A1011A] border-2 py-3 rounded-lg my-4"
+            onPress={handleLogout}
+          >
+            <Text className="text-[#A1011A] uppercase text-center font-semibold text-lg">
+              Đăng xuất
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

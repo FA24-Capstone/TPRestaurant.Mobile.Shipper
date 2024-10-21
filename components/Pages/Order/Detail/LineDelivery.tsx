@@ -55,7 +55,10 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
   return (
     <View className="mb-4">
       <Text className="text-gray-400 text-sm font-medium italic">
-        {orderData.assignedTime || "Không xác định"}
+        {moment
+          .utc(orderData.assignedTime)
+          .local()
+          .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
       </Text>
       <View className="flex-row justify-between">
         <Text className="font-medium text-lg text-gray-700 mb-4">
@@ -143,7 +146,10 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
                 .add(durationNumber, "minutes")
                 .format("hh:mm A, ")}
             </Text>
-            {moment.utc(orderData.deliveredTime).format("DD/MM/YYYY")}{" "}
+            {moment
+              .utc(orderData.startDeliveringTime)
+              .add(durationNumber, "minutes")
+              .format("DD/MM/YYYY")}{" "}
           </Text>
         ) : (
           <View>
