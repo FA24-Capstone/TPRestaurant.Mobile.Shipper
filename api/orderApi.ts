@@ -12,6 +12,7 @@ import {
   UploadConfirmedOrderImageRequest,
   UploadConfirmedOrderImageResponse,
   GetHistoryOrderIdReponse,
+  UpdateDeliveringStatusResponse,
 } from "@/app/types/order_type";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -230,6 +231,29 @@ export const updateOrderDetailStatus = async (
     return response.data;
   } catch (error) {
     console.error("Failed to update order detail status:", error);
+    throw error;
+  }
+};
+
+// ==================== Update Delivering Status ====================
+export const updateDeliveringStatus = async (
+  shipperId: string,
+  isDelivering: boolean
+): Promise<UpdateDeliveringStatusResponse> => {
+  try {
+    const response = await axios.put<UpdateDeliveringStatusResponse>(
+      `${API_URL}/api/account/update-delivering-status/${shipperId}`,
+      null, // PUT request không có body
+      {
+        params: { isDelivering },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update delivering status:", error);
     throw error;
   }
 };
