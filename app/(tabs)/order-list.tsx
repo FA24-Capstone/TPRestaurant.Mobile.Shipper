@@ -19,7 +19,11 @@ import {
   GetAllOrdersByStatusResponse,
   Order,
 } from "../types/order_type";
-import { getAllOrdersByShipper, updateOrderDetailStatus } from "@/api/orderApi";
+import {
+  getAllOrdersByShipper,
+  updateDeliveringStatus,
+  updateOrderDetailStatus,
+} from "@/api/orderApi";
 import {
   showErrorMessage,
   showSuccessMessage,
@@ -28,6 +32,8 @@ import ScrollViewTabs from "@/components/Pages/Order/ScrollViewTabs";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Modal } from "react-native-paper";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -39,6 +45,8 @@ type RootStackParamList = {
 
 const OrderListDelivery: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const accountId = useSelector((state: RootState) => state.auth.account?.id);
+
   // useRef để theo dõi trạng thái đã tải của từng `status`
   const loadedStatusRef = useRef({
     pending: false,
@@ -58,7 +66,8 @@ const OrderListDelivery: React.FC = () => {
 
   const isPendingTab = routes[index].key === "pending";
   const [isDelivering, setIsDelivering] = useState<boolean>(false);
-  // console.log("selectedOrdersNHAA", JSON.stringify(selectedOrders));
+  const [isDeliveringStatus, setIsDeliveringStatus] = useState<boolean>(false);
+  // console.log("isDelivering", JSON.stringify(isDelivering));
 
   // State để lưu trữ các đơn hàng theo trạng thái
   const [ordersByStatus, setOrdersByStatus] = useState<{
@@ -77,6 +86,63 @@ const OrderListDelivery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [processing, setProcessing] = useState<boolean>(false);
+
+  // Thêm state để quản lý trạng thái gọi API updateDeliveringStatus
+  const [isUpdatingDeliveringStatus, setIsUpdatingDeliveringStatus] =
+    useState<boolean>(false);
+  const [deliverStatusError, setDeliverStatusError] = useState<string | null>(
+    null
+  );
+
+  // console.log("isUpdatingDeliveringStatus", isUpdatingDeliveringStatus); // Kiểm tra giá trị
+
+  const handleUpdateDeliveringStatus = useCallback(async () => {
+    setIsUpdatingDeliveringStatus(true);
+    setDeliverStatusError(null);
+    try {
+      const shipperId = accountId;
+      const isDelivering = ordersByStatus.delivering.length > 0;
+      if (isDelivering === true) {
+        setIsDeliveringStatus(true);
+      } else {
+        setIsDeliveringStatus(false);
+      }
+      // console.log(
+      //   "ordersByStatus.delivering.length",
+      //   ordersByStatus.delivering.length
+      // ); // Kiểm tra giá trị
+      // console.log("isDelivering before API call:", isDelivering); // Kiểm tra trạng thái trước khi gọi API
+      if (shipperId) {
+        const response = await updateDeliveringStatus(shipperId, isDelivering);
+
+        if (response.isSuccess) {
+          // console.log(`Cập nhật thành công: isDelivering = ${isDelivering}`);
+        } else {
+          console.error("Cập nhật không thành công:", response.messages);
+          setDeliverStatusError(
+            "Cập nhật trạng thái giao hàng không thành công."
+          );
+        }
+      } else {
+        throw new Error("Shipper ID is undefined");
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái giao hàng:", error);
+      setDeliverStatusError("Đã xảy ra lỗi khi cập nhật trạng thái giao hàng.");
+    } finally {
+      setIsUpdatingDeliveringStatus(false);
+    }
+  }, [ordersByStatus.delivering.length]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loadedStatusRef.current.delivering) {
+        handleUpdateDeliveringStatus();
+      }
+    }, 500); // Đợi 500ms để chắc chắn dữ liệu đã được cập nhật
+
+    return () => clearTimeout(timeout);
+  }, [ordersByStatus.delivering.length]);
 
   // Function để fetch orders từ API
   // Function để fetch orders từ API
@@ -122,7 +188,7 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
-  // Fetch tất cả các trạng thái ban đầu khi trang được mở
+  // Fetch tất cả trạng thái ban đầu
   useEffect(() => {
     Object.keys(loadedStatusRef.current).forEach((key) => {
       fetchOrders(key as keyof typeof loadedStatusRef.current);
@@ -173,7 +239,7 @@ const OrderListDelivery: React.FC = () => {
       const updatedOrders = prevSelectedOrders.includes(orderId)
         ? prevSelectedOrders.filter((id) => id !== orderId)
         : [...prevSelectedOrders, orderId];
-      console.log("Selected Orders:", updatedOrders); // For debugging
+      // console.log("Selected Orders:", updatedOrders); // For debugging
       return updatedOrders;
     });
   };
@@ -343,20 +409,45 @@ const OrderListDelivery: React.FC = () => {
           initialLayout={initialLayout}
           renderTabBar={({ navigationState, jumpTo }) => (
             <View className="mx-4">
-              {/* Nút Tải lại */}
-              <TouchableOpacity
-                onPress={handleReload}
-                className="mx-4 mt-2 flex-row justify-end items-center"
-              >
-                <MaterialCommunityIcons
-                  name="reload"
-                  size={24}
-                  color="#A1011A"
-                />
-                <Text className="text-[#A1011A] ml-2 text-center font-semibold text-base">
-                  Tải lại
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row justify-between">
+                {isDeliveringStatus === true ? (
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="circle-slice-8"
+                      size={24}
+                      color="#137333"
+                    />
+                    <Text className="text-center font-bold text-base text-[#137333] ml-2">
+                      Đang giao hàng
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="circle-slice-8"
+                      size={24}
+                      color="#EDAA16"
+                    />
+                    <Text className="text-center font-bold text-base text-[#EDAA16] ml-2">
+                      Đang rảnh
+                    </Text>
+                  </View>
+                )}
+                {/* Nút Tải lại */}
+                <TouchableOpacity
+                  onPress={handleReload}
+                  className="mx-4 mt-2 flex-row justify-end items-center"
+                >
+                  <MaterialCommunityIcons
+                    name="reload"
+                    size={24}
+                    color="#A1011A"
+                  />
+                  <Text className="text-[#A1011A] ml-2 text-center font-semibold text-base">
+                    Tải lại
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {navigationState.routes.map(
                   (
@@ -504,6 +595,20 @@ const OrderListDelivery: React.FC = () => {
         />
       ) : (
         renderTabView()
+      )}
+      {/* Hiển thị trạng thái cập nhật delivering status */}
+      {isUpdatingDeliveringStatus && (
+        <View className="absolute top-0 left-0 right-0 bottom-0 justify-center items-center bg-black/50 bg-opacity-50">
+          <ActivityIndicator size="large" color="#A1011A" />
+          <Text className="text-white mt-2">
+            Đang cập nhật trạng thái giao hàng...
+          </Text>
+        </View>
+      )}
+      {deliverStatusError && (
+        <View className="absolute bottom-10 left-0 right-0 px-4">
+          <Text className="text-red-500 text-center">{deliverStatusError}</Text>
+        </View>
       )}
     </View>
   );

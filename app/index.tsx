@@ -32,30 +32,30 @@ const App = () => {
   const router = useRouter();
   const { width, height } = Dimensions.get("window");
 
-  async function requestUserPermission() {
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+  // async function requestUserPermission() {
+  //   const authStatus = await messaging().requestPermission();
+  //   const enabled =
+  //     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+  //     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    if (enabled) {
-      getToken();
-    }
-  }
-  const getToken = async () => {
-    const token = await messaging().getToken();
-    if (token) {
-      await AsyncStorage.setItem("device_token", token);
-      console.log("Your Firebase Token is:", token);
-    }
-  };
+  //   if (enabled) {
+  //     getToken();
+  //   }
+  // }
+  // const getToken = async () => {
+  //   const token = await messaging().getToken();
+  //   if (token) {
+  //     await AsyncStorage.setItem("device_token", token);
+  //     console.log("Your Firebase Token is:", token);
+  //   }
+  // };
 
-  useEffect(() => {
-    requestUserPermission();
-  }, []);
-  messaging().setBackgroundMessageHandler(async (message) => {
-    console.log(message);
-  });
+  // useEffect(() => {
+  //   requestUserPermission();
+  // }, []);
+  // messaging().setBackgroundMessageHandler(async (message) => {
+  //   console.log(message);
+  // });
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <ImageBackground

@@ -150,9 +150,11 @@ const OrderItem: React.FC<OrderItemProps> = ({
               </Text>
             </View>
           </View>
-          <View className="flex-row justify-between">
+          <View className="flex-row  justify-between">
             <TouchableOpacity
-              className="bg-gray-200 w-[45%] py-2 px-4 rounded-lg"
+              className={`${
+                order.status.id === 9 ? "w-full" : "w-[45%]"
+              } bg-gray-200  py-2 px-4 rounded-lg`}
               onPress={handleViewDetail}
             >
               <Text className="text-lg text-center text-gray-600 font-semibold uppercase">
@@ -168,7 +170,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
                   Giao ngay
                 </Text>
               </TouchableOpacity>
-            ) : (
+            ) : order.status.id === 8 ? (
               <TouchableOpacity className="bg-[#A1011A] w-[45%] py-2 px-4 rounded-lg">
                 <Text
                   className="text-white text-lg text-center font-semibold uppercase"
@@ -177,7 +179,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
                   Đã giao
                 </Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

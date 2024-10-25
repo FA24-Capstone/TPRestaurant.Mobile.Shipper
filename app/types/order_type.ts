@@ -443,3 +443,11 @@ export interface Delivery {
   address1: string;
   address2: string;
 }
+
+// src/app/types/order_type.ts
+
+export interface UpdateDeliveringStatusResponse {
+  result: any | null;
+  isSuccess: boolean;
+  messages: string[];
+}
