@@ -1,9 +1,12 @@
 import { getAccountByUserId } from "@/api/profileApi";
+import { enableNotification, getUserTokenByIp } from "@/api/tokenApi";
 import { logout } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import messaging from "@react-native-firebase/messaging";
+
 import {
   StyleSheet,
   SafeAreaView,
@@ -16,6 +19,7 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -23,13 +27,11 @@ const SettingScreen: React.FC = () => {
 
   // Get accountId from Redux state
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
-
-  console.log("accountId", accountId);
-
+  const token = useSelector((state: RootState) => state.auth.token);
+  const [isEnableNotification, setIsEnableNotification] = useState(false);
   const [form, setForm] = useState({
     darkMode: false,
     emailNotifications: true,
-    pushNotifications: false,
   });
   const [user, setUser] = useState({
     firstName: "",
@@ -39,6 +41,26 @@ const SettingScreen: React.FC = () => {
     avatar: "",
   });
 
+  const fetchCurrentToken = async () => {
+    try {
+      const response = await getUserTokenByIp(token!);
+      if (response.isSuccess) {
+        const tokenData = response.result as TokenData;
+
+        console.log("tokenData", tokenData);
+        if (tokenData.deviceToken) {
+          setIsEnableNotification(true);
+        } else {
+          setIsEnableNotification(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch current token:", error);
+    }
+  };
+  useEffect(() => {
+    fetchCurrentToken();
+  }, []);
   useEffect(() => {
     const fetchAccount = async () => {
       try {
@@ -62,6 +84,38 @@ const SettingScreen: React.FC = () => {
     };
     fetchAccount();
   }, [accountId]); // Add accountId as a dependency
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      getToken();
+    }
+  }
+  const getToken = async () => {
+    const token = await messaging().getToken();
+    if (token) {
+      await AsyncStorage.setItem("device_token", token);
+      return token;
+    }
+  };
+
+  useEffect(() => {
+    requestUserPermission();
+  }, []);
+  messaging().setBackgroundMessageHandler(async (message) => {
+    console.log(message);
+  });
+  const handleChangeEnableNotification = async () => {
+    const deviceToken = await AsyncStorage.getItem("device_token");
+    const response = await enableNotification(token!, deviceToken!);
+    console.log(response);
+    if (response.isSuccess) {
+      await fetchCurrentToken();
+    }
+  };
 
   // Handle logout
   const handleLogout = () => {
@@ -178,10 +232,8 @@ const SettingScreen: React.FC = () => {
             <Text style={styles.rowLabel}>Nhận thông báo</Text>
             <View style={styles.rowSpacer} />
             <Switch
-              onValueChange={(pushNotifications) =>
-                setForm({ ...form, pushNotifications })
-              }
-              value={form.pushNotifications}
+              onValueChange={async () => await handleChangeEnableNotification()}
+              value={isEnableNotification}
             />
           </View>
         </View>
