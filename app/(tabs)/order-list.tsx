@@ -34,6 +34,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Modal } from "react-native-paper";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import * as signalR from "@microsoft/signalr"; // Import SignalR
+import { useSignalRConnection } from "@/hook/useSignalRConnection";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -43,9 +45,20 @@ type RootStackParamList = {
   OrderDetail: { orderId: string };
 };
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const OrderListDelivery: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
+  // const [connection, setConnection] = useState<signalR.HubConnection | null>(
+  //   null
+  // );
+  const {
+    isConnected,
+    error: signalRError,
+    connect,
+    disconnect,
+  } = useSignalRConnection();
 
   // useRef để theo dõi trạng thái đã tải của từng `status`
   const loadedStatusRef = useRef({
@@ -67,7 +80,7 @@ const OrderListDelivery: React.FC = () => {
   const isPendingTab = routes[index].key === "pending";
   const [isDelivering, setIsDelivering] = useState<boolean>(false);
   const [isDeliveringStatus, setIsDeliveringStatus] = useState<boolean>(false);
-  // console.log("isDelivering", JSON.stringify(isDelivering));
+  console.log("đang ship ko?", isDeliveringStatus);
 
   // State để lưu trữ các đơn hàng theo trạng thái
   const [ordersByStatus, setOrdersByStatus] = useState<{
@@ -94,7 +107,12 @@ const OrderListDelivery: React.FC = () => {
     null
   );
 
-  // console.log("isUpdatingDeliveringStatus", isUpdatingDeliveringStatus); // Kiểm tra giá trị
+  useEffect(() => {
+    connect(handleReload); // Truyền hàm handleReload vào hook
+    return () => {
+      disconnect();
+    };
+  }, [connect, disconnect]);
 
   const handleUpdateDeliveringStatus = useCallback(async () => {
     setIsUpdatingDeliveringStatus(true);
@@ -107,10 +125,7 @@ const OrderListDelivery: React.FC = () => {
       } else {
         setIsDeliveringStatus(false);
       }
-      // console.log(
-      //   "ordersByStatus.delivering.length",
-      //   ordersByStatus.delivering.length
-      // ); // Kiểm tra giá trị
+
       // console.log("isDelivering before API call:", isDelivering); // Kiểm tra trạng thái trước khi gọi API
       if (shipperId) {
         const response = await updateDeliveringStatus(shipperId, isDelivering);
@@ -145,7 +160,6 @@ const OrderListDelivery: React.FC = () => {
   }, [ordersByStatus.delivering.length]);
 
   // Function để fetch orders từ API
-  // Function để fetch orders từ API
   const fetchOrders = async (
     statusKey: keyof typeof loadedStatusRef.current,
     forceRefresh: boolean = false
@@ -162,23 +176,26 @@ const OrderListDelivery: React.FC = () => {
         delivered: 9,
         cancelled: 10,
       };
+      if (accountId) {
+        const params: GetAllOrdersByStatusParams = {
+          shipperId: accountId,
+          pageNumber: 1,
+          pageSize: 10,
+          status: statuses[statusKey],
+        };
 
-      const params: GetAllOrdersByStatusParams = {
-        shipperId: "584adfc1-b3d2-4aee-b2ee-e9007aca08c5",
-        pageNumber: 1,
-        pageSize: 10,
-        status: statuses[statusKey],
-      };
-
-      const response: GetAllOrdersByStatusResponse =
-        await getAllOrdersByShipper(params);
-      if (response.isSuccess) {
-        setOrdersByStatus((prevOrders) => ({
-          ...prevOrders,
-          [statusKey]: response.result.items,
-        }));
-        // Đánh dấu `status` này là đã được tải
-        loadedStatusRef.current[statusKey] = true;
+        const response: GetAllOrdersByStatusResponse =
+          await getAllOrdersByShipper(params);
+        if (response.isSuccess) {
+          setOrdersByStatus((prevOrders) => ({
+            ...prevOrders,
+            [statusKey]: response.result.items,
+          }));
+          // Đánh dấu `status` này là đã được tải
+          loadedStatusRef.current[statusKey] = true;
+        }
+      } else {
+        showErrorMessage("Không tìm thấy tài khoản người dùng.");
       }
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -188,22 +205,25 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
-  // Fetch tất cả trạng thái ban đầu
   useEffect(() => {
-    Object.keys(loadedStatusRef.current).forEach((key) => {
-      fetchOrders(key as keyof typeof loadedStatusRef.current);
-    });
-  }, []);
+    const fetchInitialData = async () => {
+      await Promise.all(
+        Object.keys(loadedStatusRef.current).map((key) =>
+          fetchOrders(key as keyof typeof loadedStatusRef.current)
+        )
+      );
 
-  // Refetch khi `isDelivering` thay đổi để tải lại đơn hàng "Đang giao"
-  useEffect(() => {
-    if (isDelivering) {
-      // Đánh dấu lại để có thể tải lại
-      loadedStatusRef.current.delivering = false;
-      fetchOrders("pending", true); // `forceRefresh` để bắt buộc tải lại
-      fetchOrders("delivering", true); // `forceRefresh` để bắt buộc tải lại
-      setIsDelivering(false);
-    }
+      if (isDelivering) {
+        loadedStatusRef.current.delivering = false;
+        await Promise.all([
+          fetchOrders("pending", true),
+          fetchOrders("delivering", true),
+        ]);
+        setIsDelivering(false);
+      }
+    };
+
+    fetchInitialData();
   }, [isDelivering]);
 
   // Automatically select all pending orders when in "Pending" tab
@@ -224,15 +244,15 @@ const OrderListDelivery: React.FC = () => {
   );
 
   // Refetch tất cả trạng thái khi nhấn nút "Tải lại"
-  const handleReload = () => {
+  const handleReload = useCallback(() => {
     Object.keys(loadedStatusRef.current).forEach((key) => {
       loadedStatusRef.current[key as keyof typeof loadedStatusRef.current] =
-        false; // Đánh dấu tất cả trạng thái là chưa tải
+        false;
     });
     Object.keys(loadedStatusRef.current).forEach((key) => {
-      fetchOrders(key as keyof typeof loadedStatusRef.current, true); // Gọi fetch với forceRefresh = true
+      fetchOrders(key as keyof typeof loadedStatusRef.current, true);
     });
-  };
+  }, [fetchOrders]); // Đảm bảo fetchOrders được bao gồm trong dependency array nếu cần
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {

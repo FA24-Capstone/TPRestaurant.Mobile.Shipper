@@ -20,6 +20,10 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -58,9 +62,11 @@ const SettingScreen: React.FC = () => {
       console.error("Failed to fetch current token:", error);
     }
   };
+
   useEffect(() => {
     fetchCurrentToken();
   }, []);
+
   useEffect(() => {
     const fetchAccount = async () => {
       try {
@@ -76,14 +82,22 @@ const SettingScreen: React.FC = () => {
               phoneNumber: phoneNumber ?? "",
               avatar: avatar ?? "",
             });
+          } else {
+            showErrorMessage("Failed to fetch account data.");
           }
         }
       } catch (error) {
         console.error("Failed to fetch account data:", error);
+        showErrorMessage(
+          "An unexpected error occurred while fetching account data."
+        );
       }
     };
     fetchAccount();
   }, [accountId]); // Add accountId as a dependency
+
+  // QUAN LAMMMMMMMMMMMMMMMM ===================== START
+
   async function requestUserPermission() {
     const authStatus = await messaging().requestPermission();
     const enabled =
@@ -92,28 +106,55 @@ const SettingScreen: React.FC = () => {
 
     if (enabled) {
       getToken();
+    } else {
+      showErrorMessage("Notification permissions are not enabled.");
     }
   }
+
   const getToken = async () => {
-    const token = await messaging().getToken();
-    if (token) {
-      await AsyncStorage.setItem("device_token", token);
-      return token;
+    try {
+      const token = await messaging().getToken();
+      if (token) {
+        await AsyncStorage.setItem("device_token", token);
+        return token;
+      }
+    } catch (error) {
+      console.error("Failed to get token:", error);
+      showErrorMessage(
+        "An error occurred while fetching the notification token."
+      );
     }
   };
 
   useEffect(() => {
     requestUserPermission();
   }, []);
+
   messaging().setBackgroundMessageHandler(async (message) => {
     console.log(message);
   });
+
+  // QUAN LAMMMMMMMMMMMMMMMM ===================== END
+
   const handleChangeEnableNotification = async () => {
-    const deviceToken = await AsyncStorage.getItem("device_token");
-    const response = await enableNotification(token!, deviceToken!);
-    console.log(response);
-    if (response.isSuccess) {
-      await fetchCurrentToken();
+    try {
+      const deviceToken = await AsyncStorage.getItem("device_token");
+      if (deviceToken) {
+        const response = await enableNotification(token!, deviceToken);
+        if (response.isSuccess) {
+          showSuccessMessage("Notification settings updated successfully.");
+          await fetchCurrentToken();
+        } else {
+          showErrorMessage("Failed to update notification settings.");
+        }
+      } else {
+        showErrorMessage("No device token found.");
+      }
+    } catch (error) {
+      console.error("Failed to change notification settings:", error);
+      showErrorMessage(
+        "An unexpected error occurred while updating notification settings."
+      );
     }
   };
 
@@ -129,6 +170,7 @@ const SettingScreen: React.FC = () => {
           style: "destructive",
           onPress: () => {
             dispatch(logout());
+            showSuccessMessage("Logged out successfully.");
             router.replace("/login");
           },
         },

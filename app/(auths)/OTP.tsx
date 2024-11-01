@@ -13,6 +13,8 @@ import {
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { login, setProfile } from "@/redux/slices/authSlice";
+import { getAccountByUserId } from "@/api/profileApi";
 
 // Styled components using NativeWind
 const StyledView = styled(View);
@@ -85,7 +87,31 @@ const OTP: React.FC = () => {
       const otpCode = otp.join(""); // Join OTP array into a single string
 
       // Use the loginWithOtp function to verify OTP and login
-      await loginWithOtp(phoneNumber, otpCode, dispatch);
+      const loginData = await loginWithOtp(phoneNumber, otpCode);
+
+      // Dispatching login action if needed
+      dispatch(
+        login({
+          token: loginData.token,
+          refreshToken: loginData.refreshToken || "",
+          mainRole: loginData.mainRole,
+          account: loginData.account,
+          deviceResponse: loginData.deviceResponse,
+        })
+      );
+
+      // Optionally, fetch the user's profile after login and dispatch it
+      const profileData = await getAccountByUserId(loginData.account.id);
+      if (profileData.isSuccess) {
+        dispatch(
+          setProfile({
+            ...profileData.result,
+            address: profileData.result.address || "",
+          })
+        );
+      }
+
+      // Show success message
       showSuccessMessage("Login successful!");
 
       // Navigate to the home screen after successful login

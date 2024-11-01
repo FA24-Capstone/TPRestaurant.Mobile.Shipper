@@ -87,7 +87,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
       <View className="flex-row justify-between items-center mt-1">
         <Text className="text-gray-600 text-base  font-medium">Ghi chú</Text>
 
-        <Text className="text-gray-800 font-semibold text-base">
+        <Text className="text-gray-800 font-semibold max-w-[70%] text-base">
           {orderData.note || "Không có ghi chú"}
         </Text>
       </View>

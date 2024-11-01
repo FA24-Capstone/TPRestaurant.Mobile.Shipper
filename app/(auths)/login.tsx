@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   TextInput,
@@ -17,6 +17,9 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { AppDispatch, RootState } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { Checkbox } from "react-native-paper";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -26,8 +29,18 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 const Login: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false); // Loading state
+  // const [rememberMe, setRememberMe] = useState<boolean>(false); // Thêm state rememberMe
 
   const router = useRouter();
+
+  const dispatch: AppDispatch = useDispatch();
+  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace("/home-screen");
+    }
+  }, [isLoggedIn, router]);
 
   // Handle sending OTP
   const handleSendOtp = async () => {
@@ -37,27 +50,29 @@ const Login: React.FC = () => {
     }
 
     try {
-      setLoading(true); // Start loading
+      setLoading(true);
       await sendOtp(phoneNumber);
       showSuccessMessage("OTP sent successfully.");
 
-      // Navigate to OTP verification screen and pass the phone number
+      // Chuyển đổi rememberMe thành chuỗi
+      // const rememberMeString = rememberMe.toString();
+
+      // Navigate to OTP verification screen and pass the phone number and rememberMe
       router.push({
         pathname: "/OTP",
-        params: { phoneNumber },
+        params: { phoneNumber }, // Truyền rememberMe dưới dạng chuỗi
       });
     } catch (error) {
       showErrorMessage("Failed to send OTP. Please try again.");
       console.error("Error sending OTP:", error);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
   return (
     <>
       {loading && <LoadingOverlay visible={loading} />}
-      {/* Loading overlay component */}
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <StyledView className="flex-1 bg-white justify-center px-4 relative">
           <Image
@@ -90,12 +105,22 @@ const Login: React.FC = () => {
             </StyledView>
           </View>
 
+          {/* Remember Me checkbox */}
+          {/* <View className="flex flex-row items-center gap-2 mb-4">
+            <Checkbox
+              status={rememberMe ? "checked" : "unchecked"}
+              onPress={() => setRememberMe(!rememberMe)}
+              color="#A1011A"
+            />
+            <Text className="text-[#A1011A]">Ghi nhớ tài khoản này</Text>
+          </View> */}
+
           {/* Fixed Login Button */}
           <StyledTouchableOpacity
             className="w-full py-4 bg-[#A1011A] rounded-lg absolute bottom-0 left-0"
             style={{ margin: 16 }}
             onPress={handleSendOtp}
-            disabled={loading} // Disable button when loading
+            // disabled={loading}
           >
             <StyledText className="text-center text-white font-bold text-lg">
               GỬI OTP

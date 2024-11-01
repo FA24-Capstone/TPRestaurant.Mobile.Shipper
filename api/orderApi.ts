@@ -13,7 +13,12 @@ import {
   UploadConfirmedOrderImageResponse,
   GetHistoryOrderIdReponse,
   UpdateDeliveringStatusResponse,
+  CancelDeliveringOrderResponse,
 } from "@/app/types/order_type";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -33,10 +38,28 @@ export const updateOrderStatus = async (
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to update order status:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("Order status updated successfully!");
+      return data;
+    } else {
+      const errorMessage = data.messages?.[0] || "Unknown error occurred.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while updating the order status.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -54,10 +77,28 @@ export const getOrderMap = async (
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to get order map:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      return data;
+    } else {
+      const errorMessage =
+        data.messages?.[0] || "Failed to retrieve order map.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while fetching the order map.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -75,10 +116,28 @@ export const getOptimalPath = async (
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to get optimal path:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      return data;
+    } else {
+      const errorMessage =
+        data.messages?.[0] || "Failed to retrieve optimal path.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while fetching the optimal path.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -89,15 +148,15 @@ export const getAllOrdersByShipper = async (
   try {
     console.log("getAllOrdersByShipper params:", params);
 
-    // Tạo một đối tượng params linh hoạt
+    // Create a flexible params object
     const queryParams: any = {
       shipperId: params.shipperId,
       pageNumber: params.pageNumber,
       pageSize: params.pageSize,
     };
 
-    // Chỉ thêm status nếu có
-    if (params.status) {
+    // Only add status if it exists
+    if (params.status !== undefined && params.status !== null) {
       queryParams.status = params.status;
     }
 
@@ -111,10 +170,26 @@ export const getAllOrdersByShipper = async (
       }
     );
 
-    return response.data;
-  } catch (error) {
-    console.error("Failed to get all orders by status:", error);
-    throw error;
+    const data = response.data;
+
+    if (data.isSuccess) {
+      return data;
+    } else {
+      const errorMessage = data.messages?.[0] || "Failed to retrieve orders.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while fetching the orders.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -126,7 +201,7 @@ export const assignOrdersForShipper = async (
   try {
     const response = await axios.post<AssignOrderForShipperResponse>(
       `${API_URL}/order/assign-order-for-shipper`,
-      orderIds,
+      { orderIds }, // Ensure the body structure matches the backend expectation
       {
         params: { shipperId },
         headers: {
@@ -134,10 +209,28 @@ export const assignOrdersForShipper = async (
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to assign orders for shipper:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("Orders assigned to shipper successfully!");
+      return data;
+    } else {
+      const errorMessage = data.messages?.[0] || "Failed to assign orders.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while assigning the orders.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -149,7 +242,7 @@ export const uploadConfirmedOrderImage = async (
   formData.append("OrderId", data.orderId);
 
   const filename = data.image.split("/").pop();
-  const type = "image/jpeg"; // Bạn có thể thay đổi nếu cần thiết
+  const type = "image/jpeg"; // You can change this if needed
   formData.append("Image", {
     uri: data.image,
     name: filename,
@@ -173,65 +266,105 @@ export const uploadConfirmedOrderImage = async (
         timeout: 10000, // Optional: set a timeout for the request
       }
     );
-    console.log("API response for uploadConfirmedOrderImage:", response.data);
-    return response.data;
+
+    const dataResponse = response.data;
+
+    if (dataResponse.isSuccess) {
+      showSuccessMessage("Image uploaded successfully!");
+      return dataResponse;
+    } else {
+      const errorMessage =
+        dataResponse.messages?.[0] || "Failed to upload image.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      console.error("Axios error:", error.response?.data);
-      throw new Error(
-        error.response?.data?.message || "Failed to upload image."
-      );
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while uploading the image.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
     } else {
-      console.error("Unexpected error:", error);
+      showErrorMessage("An unexpected error occurred.");
       throw new Error("An unexpected error occurred.");
     }
   }
 };
 
+// ==================== Get Order Detail by ID ====================
 export const getOrderId = async (
   orderId: string
 ): Promise<GetHistoryOrderIdReponse> => {
-  // console.log("orderIdNe", orderId);
-
   try {
     const response = await axios.get<GetHistoryOrderIdReponse>(
       `${API_URL}/order/get-order-detail/${orderId}`,
       { headers: { "Content-Type": "application/json" } }
     );
-    // Log detailed response for debugging
-    // console.log(
-    //   "API response for getHistoryOrderId:",
-    //   JSON.stringify(response.data.result, null, 2)
-    // );
-    // Return the entire response data to match the expected shape
-    return response.data;
-  } catch (error) {
-    // Log and rethrow the error to handle it in the caller function or middleware
-    console.error("Failed to getHistoryOrderId:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      return data;
+    } else {
+      const errorMessage =
+        data.messages?.[0] || "Failed to retrieve order details.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while fetching the order details.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
 // ==================== Update Order Detail Status ====================
 export const updateOrderDetailStatus = async (
-  orderId: string, // Expecting an array of order IDs
+  orderId: string, // Expecting a single order ID
   isSuccessful: boolean
 ): Promise<UpdateOrderStatusResponse> => {
   try {
     const response = await axios.put<UpdateOrderStatusResponse>(
       `${API_URL}/order/update-order-status/${orderId}`,
-      orderId, // Send the orderIds array in the body
+      null, // Assuming no body is needed; adjust if necessary
       {
-        params: { isSuccessful }, // Pass the isSuccessful as a query parameter
+        params: { isSuccessful },
         headers: {
           "Content-Type": "application/json",
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to update order detail status:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("Order detail status updated successfully!");
+      return data;
+    } else {
+      const errorMessage =
+        data.messages?.[0] || "Failed to update order detail status.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while updating the order detail status.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
@@ -243,7 +376,7 @@ export const updateDeliveringStatus = async (
   try {
     const response = await axios.put<UpdateDeliveringStatusResponse>(
       `${API_URL}/api/account/update-delivering-status/${shipperId}`,
-      null, // PUT request không có body
+      null, // PUT request with no body
       {
         params: { isDelivering },
         headers: {
@@ -251,9 +384,75 @@ export const updateDeliveringStatus = async (
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to update delivering status:", error);
-    throw error;
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("Delivering status updated successfully!");
+      return data;
+    } else {
+      const errorMessage =
+        data.messages?.[0] || "Failed to update delivering status.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while updating the delivering status.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
+  }
+};
+
+// ==================== Cancel Delivering Order ====================
+export const cancelDeliveringOrder = async (
+  orderId: string,
+  cancelledReasons: string,
+  shipperRequestId: string,
+  isCancelledByAdmin: boolean
+): Promise<CancelDeliveringOrderResponse> => {
+  try {
+    const response = await axios.post<CancelDeliveringOrderResponse>(
+      `${API_URL}/order/cancel-delivering-order`,
+      {
+        orderId,
+        cancelledReasons,
+        shipperRequestId,
+        isCancelledByAdmin,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("Order cancellation processed successfully!");
+      return data;
+    } else {
+      const errorMessage = data.messages?.[0] || "Failed to cancel the order.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while processing the order cancellation.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
