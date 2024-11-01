@@ -6,8 +6,9 @@ import { Order } from "@/app/types/order_type";
 import CancelOrderModal from "./CancelOrderModal";
 import { cancelDeliveringOrder } from "@/api/orderApi";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { RootState, useAppDispatch } from "@/redux/store";
 import { showErrorMessage } from "@/components/FlashMessageHelpers";
+import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 
 // Define the types for navigation routes
 type RootStackParamList = {
@@ -23,6 +24,8 @@ const OrderActions: React.FC<OrderActionsProps> = ({
   orderData,
   onRefetch,
 }) => {
+  const dispatch = useAppDispatch();
+
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
@@ -67,6 +70,22 @@ const OrderActions: React.FC<OrderActionsProps> = ({
 
         // Đóng modal sau khi xử lý thành công
         setModalVisible(false);
+        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
+        if (accountId) {
+          statuses.forEach((status) => {
+            dispatch(
+              fetchOrdersByStatus({
+                shipperId: accountId, // Giả sử API trả về shipperId
+                pageNumber: 1,
+                pageSize: 10,
+                status,
+              })
+            );
+          });
+        } else {
+          showErrorMessage("Account ID is required.");
+        }
         onRefetch();
       }
     } catch (error) {

@@ -21,6 +21,9 @@ import {
   uploadConfirmedOrderImage,
 } from "@/api/orderApi";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { RootState, useAppDispatch } from "@/redux/store";
+import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
+import { useSelector } from "react-redux";
 
 // Define the types for navigation routes
 type RootStackParamList = {
@@ -32,10 +35,13 @@ interface RouteParams {
 }
 
 const OrderUpload: React.FC = () => {
+  const dispatch = useAppDispatch();
+
   const route = useRoute();
   const { orderId } = route.params as RouteParams;
   console.log("orderId", orderId);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const accountId = useSelector((state: RootState) => state.auth.account?.id);
 
   // State for storing multiple images
   const [image, setImage] = useState<string | null>(null);
@@ -131,6 +137,23 @@ const OrderUpload: React.FC = () => {
         console.log("Image uploaded successfully:", response);
 
         showSuccessMessage("Đơn hàng này đã được giao!");
+
+        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
+        if (accountId) {
+          statuses.forEach((status) => {
+            dispatch(
+              fetchOrdersByStatus({
+                shipperId: accountId, // Giả sử API trả về shipperId
+                pageNumber: 1,
+                pageSize: 10,
+                status,
+              })
+            );
+          });
+        } else {
+          showErrorMessage("Account ID is required.");
+        }
 
         // Finally, navigate to OrderDetail
         navigation.replace("OrderDetail", { orderId });
