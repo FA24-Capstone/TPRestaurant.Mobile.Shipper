@@ -12,6 +12,7 @@ export interface LoginResponse {
       tableName: string;
       mainRole: string;
     };
+    remmemberMe?: boolean;
   };
   isSuccess: boolean;
   messages: string[];

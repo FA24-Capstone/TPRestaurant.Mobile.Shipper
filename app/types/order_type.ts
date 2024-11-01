@@ -120,6 +120,7 @@ export interface Order {
   shipper?: Shipper;
   totalDistance?: number;
   totalDuration?: number;
+  cancelDeliveryReason: string;
 }
 
 export interface Shipper {
@@ -447,6 +448,13 @@ export interface Delivery {
 // src/app/types/order_type.ts
 
 export interface UpdateDeliveringStatusResponse {
+  result: any | null;
+  isSuccess: boolean;
+  messages: string[];
+}
+
+// cancel order
+export interface CancelDeliveringOrderResponse {
   result: any | null;
   isSuccess: boolean;
   messages: string[];

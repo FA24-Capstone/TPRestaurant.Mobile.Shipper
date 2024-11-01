@@ -48,30 +48,35 @@ const OrderDetail = () => {
     };
   }, [navigation]);
 
-  useEffect(() => {
-    const fetchOrderDetails = async () => {
-      try {
-        setLoading(true);
-        console.log("GetOrderId", orderId);
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true);
+      console.log("GetOrderId", orderId);
 
-        const response: GetHistoryOrderIdReponse = await getOrderId(orderId);
-        if (response.isSuccess) {
-          setOrderData(response.result);
-        } else {
-          setError("Không thể tải chi tiết đơn hàng.");
-        }
-      } catch (error) {
-        console.error("Error fetching order details:", error);
-        setError("Đã có lỗi xảy ra khi tải chi tiết đơn hàng.");
-      } finally {
-        setLoading(false);
+      const response: GetHistoryOrderIdReponse = await getOrderId(orderId);
+      if (response.isSuccess) {
+        setOrderData(response.result);
+      } else {
+        setError("Không thể tải chi tiết đơn hàng.");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+      setError("Đã có lỗi xảy ra khi tải chi tiết đơn hàng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (orderId) {
       fetchOrderDetails();
     }
   }, [orderId]);
+
+  // Hàm để làm mới dữ liệu đơn hàng
+  const refetchOrderDetails = () => {
+    fetchOrderDetails();
+  };
 
   if (loading) {
     return (
@@ -122,7 +127,12 @@ const OrderDetail = () => {
 
       {/* Order actions placed at the bottom */}
       <View className="absolute bottom-0 left-0 right-0 bg-white p-4">
-        {orderData && <OrderActions orderData={orderData.order} />}
+        {orderData && (
+          <OrderActions
+            orderData={orderData.order}
+            onRefetch={refetchOrderDetails}
+          />
+        )}
       </View>
     </View>
   );

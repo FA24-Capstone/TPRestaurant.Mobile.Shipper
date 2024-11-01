@@ -128,25 +128,12 @@ const OrderUpload: React.FC = () => {
         showSuccessMessage(
           "Your delivery proof has been uploaded successfully."
         );
+        console.log("Image uploaded successfully:", response);
 
-        // Now, call updateOrderDetailStatus with isSuccessful as true
-        const updateResponse = await updateOrderDetailStatus(orderId, true);
-        console.log("responseUpdateStatus", updateResponse);
+        showSuccessMessage("Đơn hàng này đã được giao!");
 
-        if (updateResponse.isSuccess) {
-          console.log("Order status updated successfully:", updateResponse);
-
-          showSuccessMessage("Đơn hàng này đã được giao!");
-
-          // Finally, navigate to OrderDetail
-          navigation.replace("OrderDetail", { orderId });
-        } else {
-          console.error(
-            "Failed to update order status:",
-            updateResponse.messages
-          );
-          showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
-        }
+        // Finally, navigate to OrderDetail
+        navigation.replace("OrderDetail", { orderId });
       } else {
         showErrorMessage(response.messages[0] || "Failed to upload the image.");
       }

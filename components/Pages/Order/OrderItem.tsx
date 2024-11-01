@@ -153,7 +153,9 @@ const OrderItem: React.FC<OrderItemProps> = ({
           <View className="flex-row  justify-between">
             <TouchableOpacity
               className={`${
-                order.status.id === 9 ? "w-full" : "w-[45%]"
+                order.status.id === 9 || order.status.id === 10
+                  ? "w-full"
+                  : "w-[45%]"
               } bg-gray-200  py-2 px-4 rounded-lg`}
               onPress={handleViewDetail}
             >

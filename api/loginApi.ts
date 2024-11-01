@@ -1,8 +1,14 @@
 import axios from "axios";
 import { AppDispatch } from "@/redux/store";
-import { login, setProfile } from "@/redux/slices/authSlice";
+import { login, logout, setProfile } from "@/redux/slices/authSlice";
 import { LoginResponse } from "@/app/types/login_type";
 import { getAccountByUserId } from "./profileApi";
+import * as SecureStore from "expo-secure-store";
+import secureStorage from "@/redux/secureStore";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -12,24 +18,41 @@ export const sendOtp = async (phoneNumber: string): Promise<string> => {
     const response = await axios.post(`${API_URL}/api/account/send-otp`, null, {
       params: {
         phoneNumber,
-        otp: 0,
+        otp: 0, // Assuming this parameter is needed by your API; adjust if necessary
       },
     });
-    console.log("OTP sent:", response.data.result);
 
-    return response.data.result.otpId;
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    throw error;
+    const data = response.data;
+
+    if (data.isSuccess) {
+      showSuccessMessage("OTP sent successfully!");
+      console.log("OTP sent:", data.result);
+      return data.result.otpId;
+    } else {
+      const errorMessage = data.messages?.[0] || "Failed to send OTP.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while sending the OTP.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
   }
 };
 
 // Function to login using OTP
 export const loginWithOtp = async (
   phoneNumber: string,
-  otpCode: string,
-  dispatch: AppDispatch
-): Promise<void> => {
+  otpCode: string
+  // rememberMe: boolean
+): Promise<LoginResponse["result"]> => {
   try {
     // Login API call
     const response = await axios.post<LoginResponse>(
@@ -40,34 +63,58 @@ export const loginWithOtp = async (
       }
     );
 
-    const loginData = response.data.result;
+    const data = response.data;
 
-    // Dispatch login action
-    dispatch(
-      login({
-        token: loginData.token,
-        refreshToken: loginData.refreshToken || "",
-        mainRole: loginData.mainRole,
-        account: loginData.account,
-        deviceResponse: loginData.deviceResponse,
-      })
-    );
+    if (data.isSuccess) {
+      showSuccessMessage("Logged in successfully!");
 
-    // Fetch profile data
-    const profileResponse = await getAccountByUserId(loginData.account.id);
+      const loginData = data.result;
 
-    // Check if the profile response is successful
-    if (profileResponse && profileResponse.isSuccess) {
-      // Dispatch profile data to Redux
-      dispatch(
-        setProfile({
-          ...profileResponse.result,
-          address: profileResponse.result.address || "",
-        })
-      );
+      // Store data in SecureStore if needed
+      // if (rememberMe) {
+      //   await secureStorage.setItem("token", loginData.token);
+      //   await secureStorage.setItem(
+      //     "refreshToken",
+      //     loginData.refreshToken || ""
+      //   );
+      //   await secureStorage.setItem("rememberMe", "true");
+      // } else {
+      //   await secureStorage.removeItem("token");
+      //   await secureStorage.removeItem("refreshToken");
+      //   await secureStorage.removeItem("rememberMe");
+      // }
+
+      return loginData;
+    } else {
+      const errorMessage = data.messages?.[0] || "Login failed.";
+      showErrorMessage(errorMessage);
+      throw new Error(errorMessage);
     }
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const backendMessage =
+        error.response?.data?.messages?.[0] ||
+        "An error occurred while trying to log in.";
+      showErrorMessage(backendMessage);
+      throw new Error(backendMessage);
+    } else {
+      showErrorMessage("An unexpected error occurred.");
+      throw new Error("An unexpected error occurred.");
+    }
+  }
+};
+
+// Function to logout
+export const logoutUser = async (dispatch: AppDispatch) => {
+  try {
+    // Dispatch logout action
+    dispatch(logout());
+
+    // Remove tokens from SecureStore
+    await secureStorage.removeItem("token");
+    await secureStorage.removeItem("refreshToken");
+    await secureStorage.removeItem("rememberMe");
   } catch (error) {
-    console.error("Login error:", error);
-    throw error;
+    console.error("Logout error:", error);
   }
 };
