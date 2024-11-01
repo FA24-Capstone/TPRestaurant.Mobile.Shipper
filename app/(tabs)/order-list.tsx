@@ -33,13 +33,16 @@ import LoadingOverlay from "@/components/LoadingOverlay";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Modal } from "react-native-paper";
 import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { RootState, useAppDispatch } from "@/redux/store";
 import * as signalR from "@microsoft/signalr"; // Import SignalR
 import { useSignalRConnection } from "@/hook/useSignalRConnection";
+import {
+  fetchOrdersByStatus,
+  setOrdersByStatus,
+} from "@/redux/slices/orderSlice";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
-// Define the types for navigation routes
 type RootStackParamList = {
   OptimizeDelivery: { selectedOrders: string[] };
   OrderDetail: { orderId: string };
@@ -48,11 +51,12 @@ type RootStackParamList = {
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const OrderListDelivery: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const orders = useSelector((state: RootState) => state.orders);
+
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
-  // const [connection, setConnection] = useState<signalR.HubConnection | null>(
-  //   null
-  // );
+
   const {
     isConnected,
     error: signalRError,
@@ -68,8 +72,6 @@ const OrderListDelivery: React.FC = () => {
     cancelled: false,
   });
 
-  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "pending", title: "Chờ giao" },
     { key: "delivering", title: "Đang giao" },
@@ -77,24 +79,11 @@ const OrderListDelivery: React.FC = () => {
     { key: "cancelled", title: "Đã hủy" },
   ]);
 
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [index, setIndex] = useState(0);
   const isPendingTab = routes[index].key === "pending";
   const [isDelivering, setIsDelivering] = useState<boolean>(false);
   const [isDeliveringStatus, setIsDeliveringStatus] = useState<boolean>(false);
-  console.log("đang ship ko?", isDeliveringStatus);
-
-  // State để lưu trữ các đơn hàng theo trạng thái
-  const [ordersByStatus, setOrdersByStatus] = useState<{
-    pending: Order[];
-    delivering: Order[];
-    delivered: Order[];
-    cancelled: Order[];
-  }>({
-    pending: [],
-    delivering: [],
-    delivered: [],
-    cancelled: [],
-  });
-
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -106,6 +95,8 @@ const OrderListDelivery: React.FC = () => {
   const [deliverStatusError, setDeliverStatusError] = useState<string | null>(
     null
   );
+
+  // console.log("đang ship ko?", isDeliveringStatus);
 
   useEffect(() => {
     connect(handleReload); // Truyền hàm handleReload vào hook
@@ -119,20 +110,14 @@ const OrderListDelivery: React.FC = () => {
     setDeliverStatusError(null);
     try {
       const shipperId = accountId;
-      const isDelivering = ordersByStatus.delivering.length > 0;
-      if (isDelivering === true) {
-        setIsDeliveringStatus(true);
-      } else {
-        setIsDeliveringStatus(false);
-      }
+      const isDelivering = orders.ordersByStatus.delivering.length > 0;
+      setIsDeliveringStatus(isDelivering);
 
       // console.log("isDelivering before API call:", isDelivering); // Kiểm tra trạng thái trước khi gọi API
       if (shipperId) {
         const response = await updateDeliveringStatus(shipperId, isDelivering);
 
-        if (response.isSuccess) {
-          // console.log(`Cập nhật thành công: isDelivering = ${isDelivering}`);
-        } else {
+        if (!response.isSuccess) {
           console.error("Cập nhật không thành công:", response.messages);
           setDeliverStatusError(
             "Cập nhật trạng thái giao hàng không thành công."
@@ -147,7 +132,7 @@ const OrderListDelivery: React.FC = () => {
     } finally {
       setIsUpdatingDeliveringStatus(false);
     }
-  }, [ordersByStatus.delivering.length]);
+  }, [accountId, orders.ordersByStatus.delivering.length]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -157,26 +142,25 @@ const OrderListDelivery: React.FC = () => {
     }, 500); // Đợi 500ms để chắc chắn dữ liệu đã được cập nhật
 
     return () => clearTimeout(timeout);
-  }, [ordersByStatus.delivering.length]);
+  }, [orders.ordersByStatus.delivering.length]);
 
-  // Function để fetch orders từ API
-  const fetchOrders = async (
-    statusKey: keyof typeof loadedStatusRef.current,
-    forceRefresh: boolean = false
-  ) => {
-    // Kiểm tra nếu dữ liệu đã được tải và không cần tải lại
-    if (!forceRefresh && loadedStatusRef.current[statusKey]) return;
+  // Function để fetch orders từ API bằng thunk
+  const fetchOrders = useCallback(
+    async (
+      statusKey: keyof typeof loadedStatusRef.current,
+      forceRefresh: boolean = false
+    ) => {
+      // Kiểm tra nếu dữ liệu đã được tải và không cần tải lại
+      if (!forceRefresh && loadedStatusRef.current[statusKey]) return;
 
-    setLoading(true);
-    setError(null);
-    try {
-      const statuses: { [key: string]: number } = {
-        pending: 7,
-        delivering: 8,
-        delivered: 9,
-        cancelled: 10,
-      };
       if (accountId) {
+        const statuses: { [key: string]: number } = {
+          pending: 7,
+          delivering: 8,
+          delivered: 9,
+          cancelled: 10,
+        };
+
         const params: GetAllOrdersByStatusParams = {
           shipperId: accountId,
           pageNumber: 1,
@@ -184,26 +168,20 @@ const OrderListDelivery: React.FC = () => {
           status: statuses[statusKey],
         };
 
-        const response: GetAllOrdersByStatusResponse =
-          await getAllOrdersByShipper(params);
-        if (response.isSuccess) {
-          setOrdersByStatus((prevOrders) => ({
-            ...prevOrders,
-            [statusKey]: response.result.items,
-          }));
-          // Đánh dấu `status` này là đã được tải
-          loadedStatusRef.current[statusKey] = true;
-        }
+        // Dispatch async thunk to fetch orders
+        dispatch(fetchOrdersByStatus(params)).then((action) => {
+          if (fetchOrdersByStatus.fulfilled.match(action)) {
+            loadedStatusRef.current[statusKey] = true;
+          } else {
+            showErrorMessage(action.payload || "Failed to fetch orders.");
+          }
+        });
       } else {
         showErrorMessage("Không tìm thấy tài khoản người dùng.");
       }
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError("Đã có lỗi xảy ra khi tải đơn hàng.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [accountId, dispatch]
+  );
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -228,13 +206,13 @@ const OrderListDelivery: React.FC = () => {
 
   // Automatically select all pending orders when in "Pending" tab
   useEffect(() => {
-    if (isPendingTab && ordersByStatus.pending.length > 0) {
-      const allPendingOrderIds = ordersByStatus.pending.map(
+    if (isPendingTab && orders.ordersByStatus.pending.length > 0) {
+      const allPendingOrderIds = orders.ordersByStatus.pending.map(
         (order) => order.orderId
       );
       setSelectedOrders(allPendingOrderIds);
     }
-  }, [isPendingTab, ordersByStatus.pending]);
+  }, [isPendingTab, orders.ordersByStatus.pending]);
 
   // Re-fetch dữ liệu khi chuyển tab (dùng cho các trường hợp ngoại lệ)
   useFocusEffect(
@@ -274,7 +252,7 @@ const OrderListDelivery: React.FC = () => {
 
   const handleConfirmModal = async () => {
     setProcessing(true);
-    const allPendingOrders = ordersByStatus.pending.map(
+    const allPendingOrders = orders.ordersByStatus.pending.map(
       (order) => order.orderId
     );
 
@@ -326,7 +304,7 @@ const OrderListDelivery: React.FC = () => {
 
     if (isPendingTab) {
       // Optimize all pending orders
-      const allPendingOrders = ordersByStatus.pending.map(
+      const allPendingOrders = orders.ordersByStatus.pending.map(
         (order) => order.orderId
       );
       navigation.navigate("OptimizeDelivery", {
@@ -338,17 +316,17 @@ const OrderListDelivery: React.FC = () => {
     }
   };
 
-  // console.log("ordersByStatus Orders:", JSON.stringify(ordersByStatus.pending)); // For debugging
+  // console.log("ordersByStatus Orders:", JSON.stringify(orders.ordersByStatus.pending)); // For debugging
 
   // Define each tab's content for react-native-tab-view
   const PendingRoute = () =>
-    ordersByStatus.pending.length === 0 ? (
+    orders.ordersByStatus.pending.length === 0 ? (
       <Text className="text-center text-gray-500 mt-4">
         Chưa có đơn hàng nào
       </Text>
     ) : (
       <OrderList
-        orders={ordersByStatus.pending}
+        orders={orders.ordersByStatus.pending}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -359,13 +337,13 @@ const OrderListDelivery: React.FC = () => {
     );
 
   const DeliveringRoute = () =>
-    ordersByStatus.delivering.length === 0 ? (
+    orders.ordersByStatus.delivering.length === 0 ? (
       <Text className="text-center text-gray-500 mt-4">
         Chưa có đơn hàng nào
       </Text>
     ) : (
       <OrderList
-        orders={ordersByStatus.delivering}
+        orders={orders.ordersByStatus.delivering}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -375,13 +353,13 @@ const OrderListDelivery: React.FC = () => {
     );
 
   const DeliveredRoute = () =>
-    ordersByStatus.delivered.length === 0 ? (
+    orders.ordersByStatus.delivered.length === 0 ? (
       <Text className="text-center text-gray-500 mt-4">
         Chưa có đơn hàng nào
       </Text>
     ) : (
       <OrderList
-        orders={ordersByStatus.delivered}
+        orders={orders.ordersByStatus.delivered}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -391,13 +369,13 @@ const OrderListDelivery: React.FC = () => {
     );
 
   const CancelledRoute = () =>
-    ordersByStatus.cancelled.length === 0 ? (
+    orders.ordersByStatus.cancelled.length === 0 ? (
       <Text className="text-center text-gray-500 mt-4">
         Chưa có đơn hàng nào
       </Text>
     ) : (
       <OrderList
-        orders={ordersByStatus.cancelled}
+        orders={orders.ordersByStatus.cancelled}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -488,9 +466,16 @@ const OrderListDelivery: React.FC = () => {
                     },
                     i: number
                   ) => {
-                    const orderCount =
-                      ordersByStatus[route.key as keyof typeof ordersByStatus]
-                        .length;
+                    const orderCount = Array.isArray(
+                      orders.ordersByStatus[
+                        route.key as keyof typeof orders.ordersByStatus
+                      ]
+                    )
+                      ? orders.ordersByStatus[
+                          route.key as keyof typeof orders.ordersByStatus
+                        ].length
+                      : 0;
+
                     return (
                       <View
                         key={route.key}
@@ -606,10 +591,11 @@ const OrderListDelivery: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white ">
+      <LoadingOverlay visible={loading} />
       <WelcomeHeader />
       {Platform.OS === "ios" ? (
         <ScrollViewTabs
-          ordersByStatus={ordersByStatus}
+          ordersByStatus={orders.ordersByStatus}
           selectedOrders={selectedOrders}
           handleSelectOrder={handleSelectOrder}
         />
