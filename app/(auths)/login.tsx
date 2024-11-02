@@ -20,6 +20,7 @@ import LoadingOverlay from "@/components/LoadingOverlay";
 import { AppDispatch, RootState } from "@/redux/store";
 import { useDispatch, useSelector } from "react-redux";
 import { Checkbox } from "react-native-paper";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -73,15 +74,19 @@ const Login: React.FC = () => {
   return (
     <>
       {loading && <LoadingOverlay visible={loading} />}
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        resetScrollToCoords={{ x: 0, y: 0 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        scrollEnabled={true}
+      >
         <StyledView className="flex-1 bg-white justify-center px-4 relative">
           <Image
             source={shipperImage}
             resizeMode="cover"
-            style={{ width: "100%", height: 360, marginBottom: 50 }}
+            style={{ width: "100%", height: 340, marginBottom: 50 }}
           />
-          {/* Header text */}
-          <StyledView className="mb-8 items-center">
+          <StyledView className="mb-4 items-center">
             <StyledText className="text-3xl font-bold text-[#A1011A] mb-2">
               Chào mừng quay trở lại
             </StyledText>
@@ -90,7 +95,6 @@ const Login: React.FC = () => {
             </StyledText>
           </StyledView>
 
-          {/* Phone input */}
           <View className="flex-row items-center gap-2 mb-4">
             <Text className="font-semibold text-[#A1011A] text-2xl">+84</Text>
             <StyledView className="w-[80%]">
@@ -105,29 +109,17 @@ const Login: React.FC = () => {
             </StyledView>
           </View>
 
-          {/* Remember Me checkbox */}
-          {/* <View className="flex flex-row items-center gap-2 mb-4">
-            <Checkbox
-              status={rememberMe ? "checked" : "unchecked"}
-              onPress={() => setRememberMe(!rememberMe)}
-              color="#A1011A"
-            />
-            <Text className="text-[#A1011A]">Ghi nhớ tài khoản này</Text>
-          </View> */}
-
-          {/* Fixed Login Button */}
           <StyledTouchableOpacity
-            className="w-full py-4 bg-[#A1011A] rounded-lg absolute bottom-0 left-0"
+            className="w-full py-3 bg-[#A1011A] rounded-lg absolute bottom-0 left-0"
             style={{ margin: 16 }}
             onPress={handleSendOtp}
-            // disabled={loading}
           >
             <StyledText className="text-center text-white font-bold text-lg">
               GỬI OTP
             </StyledText>
           </StyledTouchableOpacity>
         </StyledView>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </>
   );
 };
