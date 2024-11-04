@@ -35,11 +35,7 @@ import { Modal } from "react-native-paper";
 import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "@/redux/store";
 import * as signalR from "@microsoft/signalr"; // Import SignalR
-import { useSignalRConnection } from "@/hook/useSignalRConnection";
-import {
-  fetchOrdersByStatus,
-  setOrdersByStatus,
-} from "@/redux/slices/orderSlice";
+import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 
 const initialLayout = { width: Dimensions.get("window").width };
 
@@ -56,13 +52,6 @@ const OrderListDelivery: React.FC = () => {
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
-
-  const {
-    isConnected,
-    error: signalRError,
-    connect,
-    disconnect,
-  } = useSignalRConnection();
 
   // useRef để theo dõi trạng thái đã tải của từng `status`
   const loadedStatusRef = useRef({
@@ -88,6 +77,9 @@ const OrderListDelivery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [processing, setProcessing] = useState<boolean>(false);
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(
+    null
+  );
 
   // Thêm state để quản lý trạng thái gọi API updateDeliveringStatus
   const [isUpdatingDeliveringStatus, setIsUpdatingDeliveringStatus] =
@@ -97,13 +89,55 @@ const OrderListDelivery: React.FC = () => {
   );
 
   // console.log("đang ship ko?", isDeliveringStatus);
+  useEffect(() => {
+    // Create connection
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_URL}/notifications`)
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
+  }, []);
 
   useEffect(() => {
-    connect(handleReload); // Truyền hàm handleReload vào hook
-    return () => {
-      disconnect();
+    let retryCount = 0;
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY = 3000; // 3 seconds
+
+    const startConnection = async () => {
+      if (connection) {
+        // Start the connection
+        connection
+          .start()
+          .then(() => {
+            console.log("Connected to SignalR");
+            showSuccessMessage("Connected to SignalR");
+            // Subscribe to SignalR event
+            console.log("connection", connection);
+            connection.on("LOAD_ASSIGNED_ORDER", () => {
+              console.log("Received LOAD_ASSIGNED_ORDER event NE");
+              setLoading(true);
+              handleReload();
+              setLoading(false);
+            });
+          })
+          .catch((error) => {
+            if (retryCount < MAX_RETRIES) {
+              retryCount++;
+              setTimeout(startConnection, RETRY_DELAY);
+            } else {
+              console.log("Max retries reached. Could not connect to SignalR.");
+            }
+          });
+      }
     };
-  }, [connect, disconnect]);
+    startConnection();
+    return () => {
+      if (connection) {
+        connection.stop();
+      }
+    };
+  }, [connection]);
 
   const handleUpdateDeliveringStatus = useCallback(async () => {
     setIsUpdatingDeliveringStatus(true);

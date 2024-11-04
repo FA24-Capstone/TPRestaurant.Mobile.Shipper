@@ -98,41 +98,41 @@ const SettingScreen: React.FC = () => {
 
   // QUAN LAMMMMMMMMMMMMMMMM ===================== START
 
-  // async function requestUserPermission() {
-  //   const authStatus = await messaging().requestPermission();
-  //   const enabled =
-  //     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-  //     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  //   if (enabled) {
-  //     getToken();
-  //   } else {
-  //     showErrorMessage("Notification permissions are not enabled.");
-  //   }
-  // }
+    if (enabled) {
+      getToken();
+    } else {
+      showErrorMessage("Notification permissions are not enabled.");
+    }
+  }
 
-  // const getToken = async () => {
-  //   try {
-  //     const token = await messaging().getToken();
-  //     if (token) {
-  //       await AsyncStorage.setItem("device_token", token);
-  //       return token;
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to get token:", error);
-  //     showErrorMessage(
-  //       "An error occurred while fetching the notification token."
-  //     );
-  //   }
-  // };
+  const getToken = async () => {
+    try {
+      const token = await messaging().getToken();
+      if (token) {
+        await AsyncStorage.setItem("device_token", token);
+        return token;
+      }
+    } catch (error) {
+      console.error("Failed to get token:", error);
+      showErrorMessage(
+        "An error occurred while fetching the notification token."
+      );
+    }
+  };
 
-  // useEffect(() => {
-  //   requestUserPermission();
-  // }, []);
+  useEffect(() => {
+    requestUserPermission();
+  }, []);
 
-  // messaging().setBackgroundMessageHandler(async (message) => {
-  //   console.log(message);
-  // });
+  messaging().setBackgroundMessageHandler(async (message) => {
+    console.log(message);
+  });
 
   // QUAN LAMMMMMMMMMMMMMMMM ===================== END
 
