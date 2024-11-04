@@ -37,6 +37,8 @@ const Login: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
 
+  console.log("isLoggedIn", isLoggedIn);
+
   useEffect(() => {
     if (isLoggedIn) {
       router.replace("/home-screen");
@@ -54,9 +56,6 @@ const Login: React.FC = () => {
       setLoading(true);
       await sendOtp(phoneNumber);
       showSuccessMessage("OTP sent successfully.");
-
-      // Chuyển đổi rememberMe thành chuỗi
-      // const rememberMeString = rememberMe.toString();
 
       // Navigate to OTP verification screen and pass the phone number and rememberMe
       router.push({

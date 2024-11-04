@@ -70,19 +70,9 @@ export const loginWithOtp = async (
 
       const loginData = data.result;
 
-      // Store data in SecureStore if needed
-      // if (rememberMe) {
-      //   await secureStorage.setItem("token", loginData.token);
-      //   await secureStorage.setItem(
-      //     "refreshToken",
-      //     loginData.refreshToken || ""
-      //   );
-      //   await secureStorage.setItem("rememberMe", "true");
-      // } else {
-      //   await secureStorage.removeItem("token");
-      //   await secureStorage.removeItem("refreshToken");
-      //   await secureStorage.removeItem("rememberMe");
-      // }
+      // Lưu trữ token và refreshToken trong SecureStore
+      await secureStorage.setItem("token", loginData.token);
+      await secureStorage.setItem("refreshToken", loginData.refreshToken || "");
 
       return loginData;
     } else {
@@ -105,15 +95,13 @@ export const loginWithOtp = async (
 };
 
 // Function to logout
+// api/loginApi.ts
 export const logoutUser = async (dispatch: AppDispatch) => {
   try {
-    // Dispatch logout action
     dispatch(logout());
 
-    // Remove tokens from SecureStore
     await secureStorage.removeItem("token");
     await secureStorage.removeItem("refreshToken");
-    await secureStorage.removeItem("rememberMe");
   } catch (error) {
     console.error("Logout error:", error);
   }
