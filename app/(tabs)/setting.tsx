@@ -24,6 +24,7 @@ import {
   showErrorMessage,
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
+import secureStorage from "@/redux/secureStore";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -51,7 +52,7 @@ const SettingScreen: React.FC = () => {
       if (response.isSuccess) {
         const tokenData = response.result as TokenData;
 
-        console.log("tokenData", tokenData);
+        // console.log("tokenData", tokenData);
         if (tokenData.deviceToken) {
           setIsEnableNotification(true);
         } else {
@@ -168,7 +169,10 @@ const SettingScreen: React.FC = () => {
         {
           text: "Log Out",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
+            // Xóa token và refreshToken từ SecureStore
+            await secureStorage.removeItem("token");
+            await secureStorage.removeItem("refreshToken");
             dispatch(logout());
             showSuccessMessage("Logged out successfully.");
             router.replace("/login");

@@ -15,6 +15,7 @@ import {
 import { useSelector } from "react-redux";
 import { GetAllOrdersByStatusParams, Order } from "../types/order_type";
 import { getAllOrdersByShipper } from "@/api/orderApi";
+// import { jwtDecode } from "jwt-decode";
 
 const HomeScreen = () => {
   const router = useRouter(); // Sử dụng useRouter để điều hướng
@@ -24,6 +25,17 @@ const HomeScreen = () => {
   const [pendingOrders, setPendingOrders] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // useEffect(() => {
+  //   const token =
+  //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9tb2JpbGVwaG9uZSI6IjkzNzM2NTYzMiIsImp0aSI6ImZiNzk4YzY1LTNiMjktNDM2YS1iZTJhLTU0MDI5ODNhMWMwOCIsIkFjY291bnRJZCI6IjU4NGFkZmMxLWIzZDItNGFlZS1iMmVlLWU5MDA3YWNhMDhjNSIsInJvbGUiOiJTSElQUEVSIiwiZXhwIjoxNzMwNzY0ODAwLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo3MDIyIiwiYXVkIjoiTW9uIn0.jeUD3iickdoRePOYiHHwTdxa3J7CYikRHyyGa_NgkpE";
+  //   try {
+  //     const decoded = jwtDecode(token);
+  //     console.log("Decoded Token:", decoded);
+  //   } catch (error) {
+  //     console.error("Error decoding token:", error);
+  //   }
+  // }, []);
 
   useEffect(() => {
     const fetchAllOrders = async () => {

@@ -1,5 +1,10 @@
 import { Account } from "@/app/types/order_type";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import secureStorage from "../secureStore";
+import { getAccountByUserId } from "@/api/profileApi";
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
+import { jwtDecode } from "jwt-decode";
 
 interface AuthState {
   isLoggedIn: boolean;
@@ -19,6 +24,62 @@ const initialState: AuthState = {
   deviceResponse: null,
 };
 
+interface JwtPayload {
+  AccountId: string;
+  // Thêm các trường khác nếu cần
+}
+
+// Thunk để khởi tạo auth state từ SecureStore
+export const initializeAuth = createAsyncThunk(
+  "auth/initializeAuth",
+  async (_, { dispatch }) => {
+    const token = await secureStorage.getItem("token");
+    const refreshToken = await secureStorage.getItem("refreshToken");
+
+    if (token && refreshToken) {
+      try {
+        // const decoded = JWT.decode(token, "shh"); // 'shh' là key bạn sử dụng để mã hóa JWT
+        const decoded = jwtDecode(token) as JwtPayload;
+        console.log("Decoded accountId:", decoded.AccountId);
+
+        // Giả sử token đã được mã hóa với key 'shh' và chứa accountId
+        const accountId = decoded.AccountId;
+
+        console.log("Decoded accountId:", accountId);
+
+        if (!accountId) {
+          throw new Error("Account ID not found in token");
+        }
+
+        // Lấy thông tin tài khoản từ API
+        const profileData = await getAccountByUserId(accountId);
+        if (profileData.isSuccess) {
+          dispatch(
+            login({
+              token,
+              refreshToken,
+              mainRole: "SHIPPER",
+              account: profileData.result,
+              deviceResponse: null,
+            })
+          );
+        } else {
+          // Nếu lấy profile thất bại, đăng xuất
+          await secureStorage.removeItem("token");
+          await secureStorage.removeItem("refreshToken");
+          dispatch(logout());
+        }
+      } catch (error) {
+        console.error("initializeAuth error:", error);
+        // Xóa token không hợp lệ
+        await secureStorage.removeItem("token");
+        await secureStorage.removeItem("refreshToken");
+        dispatch(logout());
+      }
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -28,9 +89,9 @@ const authSlice = createSlice({
       action: PayloadAction<{
         token: string;
         refreshToken: string;
-        mainRole: string;
-        account: Account;
-        deviceResponse: any;
+        mainRole: string | null;
+        account: Account | null;
+        deviceResponse: any | null;
       }>
     ) {
       state.isLoggedIn = true;
@@ -51,6 +112,11 @@ const authSlice = createSlice({
       state.account = null;
       state.deviceResponse = null;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(initializeAuth.fulfilled, (state, action) => {
+      // Có thể thêm logic bổ sung nếu cần
+    });
   },
 });
 

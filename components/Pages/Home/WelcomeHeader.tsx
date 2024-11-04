@@ -13,7 +13,7 @@ const WelcomeHeader: React.FC = () => {
     ? profile.avatar
     : "https://i2.wp.com/vdostavka.ru/wp-content/uploads/2019/05/no-avatar.png?fit=512%2C512&ssl=1";
 
-  console.log("profile", profile);
+  // console.log("profile", profile);
 
   return (
     <View className="flex-row mx-2 justify-between items-center p-4">

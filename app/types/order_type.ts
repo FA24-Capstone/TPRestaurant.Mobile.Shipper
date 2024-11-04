@@ -164,7 +164,7 @@ export interface Account {
   phoneNumber: string;
   dob: any;
   gender: boolean;
-  address: string;
+  address: string | null;
   isVerified: boolean;
   isDeleted: boolean;
   loyaltyPoint: number;

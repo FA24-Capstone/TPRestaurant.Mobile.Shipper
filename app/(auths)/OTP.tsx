@@ -94,7 +94,7 @@ const OTP: React.FC = () => {
         login({
           token: loginData.token,
           refreshToken: loginData.refreshToken || "",
-          mainRole: loginData.mainRole,
+          mainRole: "SHIPPER",
           account: loginData.account,
           deviceResponse: loginData.deviceResponse,
         })
