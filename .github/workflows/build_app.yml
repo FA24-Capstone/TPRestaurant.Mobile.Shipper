@@ -2,7 +2,7 @@ name: Production Android Build
 on:
   push:
     branches:
-      - master
+      - main
     tags:
       - 'v*'
 
