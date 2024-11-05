@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { styled } from "nativewind";
 import { sendOtp } from "@/api/loginApi";
@@ -73,11 +75,10 @@ const Login: React.FC = () => {
   return (
     <>
       {loading && <LoadingOverlay visible={loading} />}
-      <KeyboardAwareScrollView
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        resetScrollToCoords={{ x: 0, y: 0 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        scrollEnabled={true}
+        behavior={Platform.OS === "ios" ? "padding" : "height"} // Sử dụng padding hoặc height tùy thuộc vào nền tảng
+        enabled
       >
         <StyledView className="flex-1 bg-white justify-center px-4 relative">
           <Image
@@ -109,8 +110,8 @@ const Login: React.FC = () => {
           </View>
 
           <StyledTouchableOpacity
-            className="w-full py-3 bg-[#A1011A] rounded-lg absolute bottom-0 left-0"
-            style={{ margin: 16 }}
+            className="w-full py-3 bg-[#A1011A] rounded-lg"
+            style={{ marginBottom: 16 }}
             onPress={handleSendOtp}
           >
             <StyledText className="text-center text-white font-bold text-lg">
@@ -118,7 +119,7 @@ const Login: React.FC = () => {
             </StyledText>
           </StyledTouchableOpacity>
         </StyledView>
-      </KeyboardAwareScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 };

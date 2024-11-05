@@ -170,6 +170,8 @@ export const getAllOrdersByShipper = async (
       }
     );
 
+    console.log("getAllOrdersByShipper response:", response.data);
+
     const data = response.data;
 
     if (data.isSuccess) {

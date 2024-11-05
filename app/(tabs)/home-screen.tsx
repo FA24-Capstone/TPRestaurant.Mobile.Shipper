@@ -2,9 +2,9 @@ import OrderChart from "@/components/Pages/Home/OrderChart";
 import OrderSummary from "@/components/Pages/Home/OrderSummary";
 import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
-import { RootState } from "@/redux/store";
+import { AppDispatch, RootState } from "@/redux/store";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -12,81 +12,196 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { GetAllOrdersByStatusParams, Order } from "../types/order_type";
 import { getAllOrdersByShipper } from "@/api/orderApi";
-// import { jwtDecode } from "jwt-decode";
+import { formatDate, getLast7Days } from "@/constants/dateUtils";
+import { showSuccessMessage } from "@/components/FlashMessageHelpers";
+import * as signalR from "@microsoft/signalr"; // Import SignalR
+import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const HomeScreen = () => {
   const router = useRouter(); // Sử dụng useRouter để điều hướng
+  const dispatch = useDispatch<AppDispatch>();
+
+  const ordersState = useSelector((state: RootState) => state.orders);
   const profile = useSelector((state: RootState) => state.auth.account);
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(
+    null
+  );
 
   const [completedOrders, setCompletedOrders] = useState<number>(0);
   const [pendingOrders, setPendingOrders] = useState<number>(0);
+  const [cancelledOrders, setCancelledOrders] = useState<number>(0); // New state
+  const [allOrders, setAllOrders] = useState<Order[]>([]); // New state
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   const token =
-  //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9tb2JpbGVwaG9uZSI6IjkzNzM2NTYzMiIsImp0aSI6ImZiNzk4YzY1LTNiMjktNDM2YS1iZTJhLTU0MDI5ODNhMWMwOCIsIkFjY291bnRJZCI6IjU4NGFkZmMxLWIzZDItNGFlZS1iMmVlLWU5MDA3YWNhMDhjNSIsInJvbGUiOiJTSElQUEVSIiwiZXhwIjoxNzMwNzY0ODAwLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo3MDIyIiwiYXVkIjoiTW9uIn0.jeUD3iickdoRePOYiHHwTdxa3J7CYikRHyyGa_NgkpE";
-  //   try {
-  //     const decoded = jwtDecode(token);
-  //     console.log("Decoded Token:", decoded);
-  //   } catch (error) {
-  //     console.error("Error decoding token:", error);
-  //   }
-  // }, []);
+  const retryCountRef = useRef<number>(0);
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY = 3000; // 3 seconds
+  console.log("completedOrders", completedOrders);
+  console.log("cancelledOrders", cancelledOrders);
+  // console.log("allOrders", JSON.stringify(allOrders, null, 2));
 
-  useEffect(() => {
-    const fetchAllOrders = async () => {
-      try {
-        if (!profile?.id) {
-          throw new Error("Shipper ID không tồn tại.");
+  // Fetch all orders
+  const fetchAllOrders = useCallback(async () => {
+    try {
+      if (!profile?.id) {
+        throw new Error("Shipper ID không tồn tại.");
+      }
+
+      let pageNumber = 1;
+      const pageSize = 100;
+      let fetchedOrders: Order[] = [];
+      let totalPages = 1;
+
+      setLoading(true);
+      setError(null); // Reset error before fetching
+
+      while (pageNumber <= totalPages) {
+        const params: GetAllOrdersByStatusParams = {
+          shipperId: profile.id,
+          pageNumber,
+          pageSize,
+        };
+
+        const response = await getAllOrdersByShipper(params);
+        console.log("response", response);
+
+        if (response.isSuccess) {
+          fetchedOrders = [...fetchedOrders, ...response.result.items];
+          totalPages = response.result.totalPages;
+          pageNumber += 1;
+        } else {
+          throw new Error(response.messages.join(", "));
         }
+      }
 
-        let pageNumber = 1;
-        const pageSize = 100;
-        let allOrders: Order[] = [];
-        let totalPages = 1;
+      setAllOrders(fetchedOrders);
 
-        while (pageNumber <= totalPages) {
-          const params: GetAllOrdersByStatusParams = {
-            shipperId: profile.id,
-            pageNumber,
-            pageSize,
-          };
+      // Filter orders
+      const completed = fetchedOrders.filter(
+        (order) => order.statusId === 9
+      ).length;
+      const pending = fetchedOrders.filter(
+        (order) => order.statusId === 7 || order.statusId === 8
+      ).length;
+      const cancelled = fetchedOrders.filter(
+        (order) => order.statusId === 10 // Assuming 10 is the statusId for cancelled
+      ).length;
 
-          const response = await getAllOrdersByShipper(params);
+      setCompletedOrders(completed);
+      setPendingOrders(pending);
+      setCancelledOrders(cancelled);
+    } catch (err: any) {
+      console.error("Error fetching orders:", err);
+      setError(err.message || "An error occurred while fetching orders.");
+    } finally {
+      setLoading(false);
+    }
+  }, [profile?.id]);
 
-          if (response.isSuccess) {
-            allOrders = [...allOrders, ...response.result.items];
-            totalPages = response.result.totalPages;
-            pageNumber += 1;
-          } else {
-            throw new Error(response.messages.join(", "));
+  // Hàm tạo chartData từ allOrders dựa trên 7 ngày gần nhất từ ngày hiện tại
+  const generateChartData = useCallback((): {
+    day: string;
+    completed: number;
+    cancelled: number;
+  }[] => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Đặt giờ về 0 để so sánh ngày chính xác
+
+    const last7Days = getLast7Days(today); // Lấy 7 ngày gần nhất từ ngày hôm nay
+
+    // Khởi tạo mảng chartData với 0
+    const chartData = last7Days.map((date) => ({
+      day: formatDate(date),
+      completed: 0,
+      cancelled: 0,
+    }));
+
+    // Đếm số lượng đơn hàng cho từng ngày
+    allOrders.forEach((order) => {
+      const orderDate = new Date(order.orderDate);
+      orderDate.setHours(0, 0, 0, 0); // Đặt giờ về 0 để so sánh ngày chính xác
+
+      last7Days.forEach((date, index) => {
+        if (
+          orderDate.getDate() === date.getDate() &&
+          orderDate.getMonth() === date.getMonth() &&
+          orderDate.getFullYear() === date.getFullYear()
+        ) {
+          if (order.statusId === 9) {
+            chartData[index].completed += 1;
+          } else if (order.statusId === 10) {
+            chartData[index].cancelled += 1;
           }
         }
+      });
+    });
 
-        // Lọc đơn hàng
-        const completed = allOrders.filter(
-          (order) => order.statusId === 9
-        ).length;
-        const pending = allOrders.filter(
-          (order) => order.statusId !== 9 && order.statusId !== 10
-        ).length;
+    return chartData;
+  }, [allOrders]);
 
-        setCompletedOrders(completed);
-        setPendingOrders(pending);
-      } catch (err: any) {
-        console.error("Error fetching orders:", err);
-        setError(err.message || "Đã xảy ra lỗi khi lấy đơn hàng.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Set up SignalR connection
+  useEffect(() => {
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_URL}/notifications`)
+      .withAutomaticReconnect()
+      .build();
 
-    fetchAllOrders();
-  }, [profile?.id]);
+    setConnection(newConnection);
+  }, []);
+
+  // Start SignalR connection and handle events
+  useEffect(() => {
+    if (connection) {
+      const startConnection = async () => {
+        try {
+          await connection.start();
+          console.log("Connected to SignalR");
+          showSuccessMessage("Connected to SignalR");
+
+          // Subscribe to SignalR events
+          connection.on("LOAD_ASSIGNED_ORDER", () => {
+            console.log("Received LOAD_ASSIGNED_ORDER event");
+            fetchAllOrders();
+          });
+        } catch (error) {
+          console.error("Connection error:", error);
+          if (retryCountRef.current < MAX_RETRIES) {
+            retryCountRef.current += 1;
+            setTimeout(() => {
+              startConnection();
+            }, RETRY_DELAY);
+          } else {
+            console.log("Max retries reached. Could not connect to SignalR.");
+          }
+        }
+      };
+
+      startConnection();
+
+      return () => {
+        if (connection) {
+          connection.off("LOAD_ASSIGNED_ORDER");
+          connection.stop();
+        }
+      };
+    }
+  }, [connection, fetchAllOrders]);
+
+  // Fetch orders when profile.id is available
+  useEffect(() => {
+    if (profile?.id) {
+      fetchAllOrders();
+    }
+  }, [profile?.id, fetchAllOrders]);
+
+  const chartData = generateChartData();
+  console.log("chartData", chartData);
 
   if (loading) {
     return (
@@ -102,11 +217,7 @@ const HomeScreen = () => {
         <Text className="text-red-500 text-lg">{error}</Text>
         <TouchableOpacity
           className="mt-4 px-4 py-2 bg-[#970C1A] rounded"
-          onPress={() => {
-            setLoading(true);
-            setError(null);
-            // Gọi lại hàm fetchOrders nếu cần
-          }}
+          onPress={fetchAllOrders} // Call fetchAllOrders on retry
         >
           <Text className="text-white">Thử Lại</Text>
         </TouchableOpacity>
@@ -114,18 +225,11 @@ const HomeScreen = () => {
     );
   }
 
+  // Update fakeData to use actual data or keep using fakeData for demonstration
   const fakeData = {
-    completedOrders: 20,
-    pendingOrders: 8,
-    chartData: [
-      { day: "Mon", value: 6000 },
-      { day: "Tue", value: 4000 },
-      { day: "Wed", value: 5500 },
-      { day: "Thu", value: 15980 },
-      { day: "Fri", value: 6000 },
-      { day: "Sat", value: 7500 },
-      { day: "Sun", value: 5000 },
-    ],
+    completedOrders: completedOrders,
+    pendingOrders: pendingOrders,
+    cancelledOrders: cancelledOrders,
   };
 
   return (
@@ -136,7 +240,7 @@ const HomeScreen = () => {
         pendingOrders={pendingOrders}
       />
       <ScrollView className="flex-1">
-        <OrderChart chartData={fakeData.chartData} />
+        <OrderChart chartData={chartData} />
         {/* Truyền limit={2} để giới hạn số đơn hiển thị */}
         <View className="mx-6">
           <Text className="font-semibold text-[#970C1A] uppercase text-lg text-center">
