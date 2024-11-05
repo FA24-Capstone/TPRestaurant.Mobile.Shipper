@@ -93,16 +93,3 @@ export const loginWithOtp = async (
     }
   }
 };
-
-// Function to logout
-// api/loginApi.ts
-export const logoutUser = async (dispatch: AppDispatch) => {
-  try {
-    dispatch(logout());
-
-    await secureStorage.removeItem("token");
-    await secureStorage.removeItem("refreshToken");
-  } catch (error) {
-    console.error("Logout error:", error);
-  }
-};
