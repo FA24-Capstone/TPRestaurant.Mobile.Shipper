@@ -16,7 +16,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://thienphurestaurant.calmwater-96d95895.eastasia.azurecontainerapps.io/"
-      }
+      },
+      "buildWebhookUrl": "https://thienphurestaurant.calmwater-96d95895.eastasia.azurecontainerapps.io/api/discord"
     }
   },
   "submit": {
