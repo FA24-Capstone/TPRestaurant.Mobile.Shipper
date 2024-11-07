@@ -1,5 +1,5 @@
-export interface AppActionResult {
-  result: any;
+export interface AppActionResult<T = any> {
+  result: T;
   isSuccess: boolean;
-  messages: any[];
+  messages: string[];
 }

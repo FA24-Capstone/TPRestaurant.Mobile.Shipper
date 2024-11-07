@@ -1,11 +1,9 @@
 // src/redux/slices/orderSlice.ts
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { Order } from "@/app/types/order_type";
+import { GetAllOrdersData, Order } from "@/app/types/order_type";
 import { getAllOrdersByShipper } from "@/api/orderApi";
-import {
-  GetAllOrdersByStatusParams,
-  GetAllOrdersByStatusResponse,
-} from "@/app/types/order_type";
+import { GetAllOrdersByStatusParams } from "@/app/types/order_type";
+import { AppActionResult } from "@/app/types/app_action_result_type";
 
 // Định nghĩa interface cho state
 interface OrdersState {
@@ -38,18 +36,19 @@ export const fetchOrdersByStatus = createAsyncThunk<
   { rejectValue: string }
 >("orders/fetchOrdersByStatus", async (params, { rejectWithValue }) => {
   try {
-    const response: GetAllOrdersByStatusResponse = await getAllOrdersByShipper(
-      params
-    );
+    const response: AppActionResult<GetAllOrdersData> =
+      await getAllOrdersByShipper(params);
+
     if (!response.isSuccess) {
       return rejectWithValue(
         response.messages?.[0] || "Failed to fetch orders."
       );
     }
-    // Chuyển đổi status number thành key string nếu cần thiết
+
     if (params.status === undefined) {
       return rejectWithValue("Status is undefined.");
     }
+
     const statusKey = getStatusKey(params.status);
     return { statusKey, orders: response.result.items };
   } catch (error: any) {

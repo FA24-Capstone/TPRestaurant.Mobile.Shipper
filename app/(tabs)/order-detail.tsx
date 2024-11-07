@@ -15,6 +15,10 @@ import {
   OrderHistoryData,
 } from "../types/order_type";
 import { getOrderId } from "@/api/orderApi";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 const images = [
   "https://driver.shopeefood.vn/media/filer_public_thumbnails/filer_public/36/95/3695c8cb-b437-4d21-b3c8-5ad709c9576e/11.png__600x864_q95_subsampling-2.png",
   "https://image.bnews.vn/MediaUpload/Org/2020/11/22/20201122-145154.jpg",
@@ -49,19 +53,28 @@ const OrderDetail = () => {
   }, [navigation]);
 
   const fetchOrderDetails = async () => {
-    try {
-      setLoading(true);
-      console.log("GetOrderId", orderId);
+    setLoading(true);
+    setError(null);
 
-      const response: GetHistoryOrderIdReponse = await getOrderId(orderId);
+    try {
+      console.log("Fetching order details for orderId:", orderId);
+      const response = await getOrderId(orderId);
+
       if (response.isSuccess) {
         setOrderData(response.result);
+        // showSuccessMessage("Order details loaded successfully.");
       } else {
-        setError("Không thể tải chi tiết đơn hàng.");
+        const errorMessage =
+          response.messages[0] || "Không thể tải chi tiết đơn hàng.";
+        setError(errorMessage);
+        showErrorMessage(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching order details:", error);
-      setError("Đã có lỗi xảy ra khi tải chi tiết đơn hàng.");
+      const errorMessage =
+        error.message || "Đã có lỗi xảy ra khi tải chi tiết đơn hàng.";
+      setError(errorMessage);
+      showErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }

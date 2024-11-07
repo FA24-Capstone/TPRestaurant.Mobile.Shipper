@@ -74,7 +74,7 @@ const OptimizeDelivery: React.FC = () => {
       setError(null);
 
       try {
-        // Check if orders have changed or if force is true
+        // Kiểm tra nếu danh sách đơn hàng đã thay đổi hoặc ép buộc refetch
         const ordersChanged =
           !selectedOrdersRef.current ||
           selectedOrdersRef.current.length !== selectedOrders.length ||
@@ -83,112 +83,93 @@ const OptimizeDelivery: React.FC = () => {
           );
 
         if (!force && !ordersChanged && cachedDeliveriesRef.current) {
-          // Use cached deliveries if orders haven't changed and not forced
+          // Nếu đơn hàng không thay đổi và không ép buộc, dùng dữ liệu cache
           setDeliveries(cachedDeliveriesRef.current);
           setLoading(false);
           return;
         }
 
-        const requestBody: GetOptimalPathRequest = selectedOrders;
-        const response = await getOptimalPath(requestBody);
+        const response = await getOptimalPath(selectedOrders);
 
         if (response.isSuccess) {
-          // Temporary variable to hold the previous address
-          let previousAddress2 =
+          // Gắn tạm địa chỉ trước đó để bắt đầu xử lý tuyến đường
+          let previousAddress =
             "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
 
-          const mappedDeliveries: Delivery[] = [];
-
-          // Iterate through each OptimalPathResult item
-          response.result.forEach((item: OptimalPathResult) => {
+          const mappedDeliveries = response.result.flatMap((item) => {
             const pointLetter = String.fromCharCode(65 + (item.index - 1));
-
-            // Iterate through each order in the current item
-            item.orders.forEach((order: Order) => {
-              const address1 = previousAddress2;
-              const address2 = order.account.address;
-
-              // Create a Delivery object for the current order
-              const delivery: Delivery = {
+            return item.orders.map((order) => {
+              const delivery = {
                 id: order.orderId,
                 status: order.statusId,
                 color:
                   order.statusId === 7
-                    ? "#E3B054" // AssignedToShipper
+                    ? "#E3B054"
                     : order.statusId === 8
-                    ? "#1D72C0" // Some other status
+                    ? "#1D72C0"
                     : order.statusId === 9
-                    ? "#4F970F" // Another status
-                    : "#9A0E1D", // Default/Error status
+                    ? "#4F970F"
+                    : "#9A0E1D",
                 time: item.duration,
                 distanceToNextDestination: item.distanceFromPreviousDestination,
                 startDeliveringTime: order.startDeliveringTime,
                 deliveredTime: order.deliveredTime,
                 assignedTime: order.assignedTime,
                 order: order,
-                address1: address1, // Always the starting point
-                address2: address2, // Could be the same or different from address1
+                address1: previousAddress,
+                address2: order.account.address,
               };
-
-              // Add the Delivery object to the array
-              mappedDeliveries.push(delivery);
+              previousAddress = order.account.address || previousAddress;
+              return delivery;
             });
-
-            // Update the previousAddress2 to the last address in the current item
-            if (item.orders.length > 0) {
-              previousAddress2 =
-                item.orders[item.orders.length - 1].account.address;
-            }
           });
 
-          // Group deliveries by address only (no longer grouping by orderId)
-          const groupedDeliveriesMap = new Map<string, DeliveryGroup>();
-
-          mappedDeliveries.forEach((delivery) => {
-            const key = delivery.order.account.address || ""; // Group by address only
-
-            if (!groupedDeliveriesMap.has(key)) {
-              groupedDeliveriesMap.set(key, {
-                point: String.fromCharCode(
-                  65 +
-                    (response.result.find((r) =>
-                      r.orders.some((o) => o.orderId === delivery.id)
-                    )?.index || 0) -
-                    1
-                ),
-                status: delivery.status,
-                color: delivery.color,
-                address1: delivery.address1, // Keep the starting point constant
-                address2: delivery.address2, // Can vary based on the order
-                time: delivery.time,
-                distanceToNextDestination: delivery.distanceToNextDestination,
-                startDeliveringTime: delivery.startDeliveringTime,
-                deliveredTime: delivery.deliveredTime,
-                orders: [delivery],
-              });
-            } else {
-              groupedDeliveriesMap.get(key)?.orders.push(delivery);
-            }
-          });
-
-          const groupedDeliveries = Array.from(groupedDeliveriesMap.values());
+          // Gom nhóm theo địa chỉ giao hàng
+          const groupedDeliveries = Array.from(
+            mappedDeliveries.reduce((map, delivery) => {
+              const addressKey = delivery.order.account.address || "";
+              if (!map.has(addressKey)) {
+                map.set(addressKey, {
+                  point: String.fromCharCode(
+                    65 +
+                      (response.result.find((r) =>
+                        r.orders.some((o) => o.orderId === delivery.id)
+                      )?.index || 0) -
+                      1
+                  ),
+                  status: delivery.status,
+                  color: delivery.color,
+                  address1: delivery.address1,
+                  address2: delivery.address2,
+                  time: delivery.time,
+                  distanceToNextDestination: delivery.distanceToNextDestination,
+                  startDeliveringTime: delivery.startDeliveringTime,
+                  deliveredTime: delivery.deliveredTime,
+                  orders: [delivery],
+                });
+              } else {
+                map.get(addressKey)?.orders.push(delivery);
+              }
+              return map;
+            }, new Map())
+          ).map(([, group]) => group);
 
           setDeliveries(groupedDeliveries);
-
-          // Cache the fetched deliveries and selectedOrders
           cachedDeliveriesRef.current = groupedDeliveries;
           selectedOrdersRef.current = selectedOrders;
+          showSuccessMessage("Fetched optimal path successfully.");
         } else {
-          // Handle unsuccessful response
-          setError("Failed to retrieve optimal path.");
-          showErrorMessage("Failed to retrieve optimal path.");
+          const errorMessage =
+            response.messages.join("\n") || "Failed to retrieve optimal path.";
+          showErrorMessage(errorMessage);
+          setError(errorMessage);
         }
       } catch (err) {
-        setError("An error occurred while fetching data.");
-        showErrorMessage("An error occurred while fetching data.");
+        const errorMessage = "An error occurred while fetching data.";
+        showErrorMessage(errorMessage);
+        setError(errorMessage);
         console.error("Failed to get optimal path:", err);
       } finally {
-        // Stop the loading indicator
         setLoading(false);
       }
     },
@@ -221,11 +202,9 @@ const OptimizeDelivery: React.FC = () => {
 
     try {
       // Update the status for all selected orders
-      const updatePromises = selectedOrders.map((orderId) =>
-        updateOrderDetailStatus(orderId, true)
+      const responses = await Promise.all(
+        selectedOrders.map((orderId) => updateOrderDetailStatus(orderId, true))
       );
-
-      const responses = await Promise.all(updatePromises);
 
       const allSuccess = responses.every((response) => response.isSuccess);
 

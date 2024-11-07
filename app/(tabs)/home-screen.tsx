@@ -16,7 +16,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { GetAllOrdersByStatusParams, Order } from "../types/order_type";
 import { getAllOrdersByShipper } from "@/api/orderApi";
 import { formatDate, getLast7Days } from "@/constants/dateUtils";
-import { showSuccessMessage } from "@/components/FlashMessageHelpers";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 import * as signalR from "@microsoft/signalr"; // Import SignalR
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 
@@ -76,6 +79,9 @@ const HomeScreen = () => {
           totalPages = response.result.totalPages;
           pageNumber += 1;
         } else {
+          showErrorMessage(
+            response.messages.join(", ") || "Failed to retrieve orders."
+          );
           throw new Error(response.messages.join(", "));
         }
       }
@@ -98,7 +104,10 @@ const HomeScreen = () => {
       setCancelledOrders(cancelled);
     } catch (err: any) {
       console.error("Error fetching orders:", err);
-      setError(err.message || "An error occurred while fetching orders.");
+      const errorMessage =
+        err.message || "An error occurred while fetching orders.";
+      setError(errorMessage);
+      showErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }

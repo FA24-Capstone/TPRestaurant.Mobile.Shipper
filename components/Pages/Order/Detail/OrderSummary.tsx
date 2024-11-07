@@ -6,6 +6,8 @@ import {
   calculateDeliverOrderFee,
   getAccountByPhoneNumber,
 } from "@/api/feeShipApi";
+import { AppActionResult } from "@/app/types/app_action_result_type";
+import { showErrorMessage } from "@/components/FlashMessageHelpers";
 
 interface OrderSummaryProps {
   orderData: Order;
@@ -38,27 +40,40 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
         const accountResponse = await getAccountByPhoneNumber(
           orderData?.account?.phoneNumber
         );
-        const address = accountResponse.result.addresses.find(
-          (addr) => addr.isCurrentUsed
-        );
-
-        if (address) {
-          // Gọi API để tính phí ship dựa trên customerInfoAddressId
-          const feeResponse = await calculateDeliverOrderFee(
-            address.customerInfoAddressId
+        if (accountResponse.isSuccess) {
+          const address = accountResponse.result.addresses.find(
+            (addr) => addr.isCurrentUsed
           );
-          setShippingFee(feeResponse.result);
+
+          if (address) {
+            // Gọi API để tính phí ship dựa trên customerInfoAddressId
+            const feeResponse: AppActionResult<number> =
+              await calculateDeliverOrderFee(address.customerInfoAddressId);
+
+            if (feeResponse.isSuccess) {
+              // Cập nhật phí ship với giá trị từ feeResponse.result
+              setShippingFee(feeResponse.result);
+            } else {
+              const feeErrorMsg =
+                feeResponse.messages.join("\n") || "Không thể tính phí ship.";
+              showErrorMessage(feeErrorMsg);
+            }
+          } else {
+            showErrorMessage("Không tìm thấy địa chỉ giao hàng hiện tại.");
+          }
         } else {
-          console.warn("Không tìm thấy địa chỉ giao hàng.");
+          const accountErrorMsg =
+            accountResponse.messages.join("\n") ||
+            "Không thể lấy thông tin tài khoản.";
+          showErrorMessage(accountErrorMsg);
         }
       } catch (error) {
         console.error("Failed to fetch shipping fee:", error);
+        showErrorMessage("Đã xảy ra lỗi khi tính phí ship. Vui lòng thử lại.");
       }
     };
 
-    if (orderData?.account?.phoneNumber) {
-      fetchShippingFee();
-    }
+    fetchShippingFee();
   }, [orderData]);
 
   return (

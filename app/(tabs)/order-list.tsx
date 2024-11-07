@@ -14,13 +14,8 @@ import WelcomeHeader from "@/components/Pages/Home/WelcomeHeader";
 import OrderList from "@/components/Pages/Order/OrderList";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { GetAllOrdersByStatusParams } from "../types/order_type";
 import {
-  GetAllOrdersByStatusParams,
-  GetAllOrdersByStatusResponse,
-  Order,
-} from "../types/order_type";
-import {
-  getAllOrdersByShipper,
   updateDeliveringStatus,
   updateOrderDetailStatus,
 } from "@/api/orderApi";
@@ -113,7 +108,7 @@ const OrderListDelivery: React.FC = () => {
             console.log("Connected to SignalR");
             showSuccessMessage("Connected to SignalR");
             // Subscribe to SignalR event
-            console.log("connection", connection);
+            // console.log("connection", connection);
             connection.on("LOAD_ASSIGNED_ORDER", () => {
               console.log("Received LOAD_ASSIGNED_ORDER event NE");
               setLoading(true);
@@ -291,19 +286,17 @@ const OrderListDelivery: React.FC = () => {
     );
 
     try {
-      // Perform all API calls in parallel
-      const updatePromises = allPendingOrders.map((orderId) =>
-        updateOrderDetailStatus(orderId, true)
+      const responses = await Promise.all(
+        allPendingOrders.map((orderId) =>
+          updateOrderDetailStatus(orderId, true)
+        )
       );
 
-      const responses = await Promise.all(updatePromises);
-
-      // Check if all updates were successful
       const allSuccess = responses.every((response) => response.isSuccess);
 
       if (allSuccess) {
         showSuccessMessage("Tất cả đơn hàng đã được giao ngay thành công!");
-        setIsDelivering(true); // Trigger re-fetching of orders
+        setIsDelivering(true);
         setModalVisible(false);
         navigation.navigate("OptimizeDelivery", {
           selectedOrders: allPendingOrders,
@@ -645,11 +638,11 @@ const OrderListDelivery: React.FC = () => {
           </Text>
         </View>
       )}
-      {deliverStatusError && (
+      {/* {deliverStatusError && (
         <View className="absolute bottom-10 left-0 right-0 px-4">
           <Text className="text-red-500 text-center">{deliverStatusError}</Text>
         </View>
-      )}
+      )} */}
     </View>
   );
 };
