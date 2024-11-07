@@ -54,17 +54,18 @@ export const initializeAuth = createAsyncThunk(
         // Lấy thông tin tài khoản từ API
         const profileData = await getAccountByUserId(accountId);
         if (profileData.isSuccess) {
+          // Nếu lấy thông tin thành công, cập nhật trạng thái đăng nhập
           dispatch(
             login({
               token,
               refreshToken,
-              mainRole: "SHIPPER",
+              mainRole: "SHIPPER", // Bạn có thể thay đổi `mainRole` nếu cần
               account: profileData.result,
               deviceResponse: null,
             })
           );
         } else {
-          // Nếu lấy profile thất bại, đăng xuất
+          // Nếu thất bại, xóa token và refreshToken, sau đó đăng xuất
           await secureStorage.removeItem("token");
           await secureStorage.removeItem("refreshToken");
           dispatch(logout());

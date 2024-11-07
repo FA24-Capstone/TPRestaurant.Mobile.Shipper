@@ -16,10 +16,7 @@ import {
   showErrorMessage,
 } from "@/components/FlashMessageHelpers";
 import { useRoute } from "@react-navigation/native";
-import {
-  updateOrderDetailStatus,
-  uploadConfirmedOrderImage,
-} from "@/api/orderApi";
+import { uploadConfirmedOrderImage } from "@/api/orderApi";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { RootState, useAppDispatch } from "@/redux/store";
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
@@ -131,9 +128,6 @@ const OrderUpload: React.FC = () => {
       console.log("responseUpload", response);
 
       if (response.isSuccess) {
-        showSuccessMessage(
-          "Your delivery proof has been uploaded successfully."
-        );
         console.log("Image uploaded successfully:", response);
 
         showSuccessMessage("Đơn hàng này đã được giao!");
@@ -158,7 +152,9 @@ const OrderUpload: React.FC = () => {
         // Finally, navigate to OrderDetail
         navigation.replace("OrderDetail", { orderId });
       } else {
-        showErrorMessage(response.messages[0] || "Failed to upload the image.");
+        const errorMessage =
+          response.messages[0] || "Failed to upload the image.";
+        showErrorMessage(errorMessage);
       }
     } catch (error: any) {
       console.error("Error uploading image:", error);

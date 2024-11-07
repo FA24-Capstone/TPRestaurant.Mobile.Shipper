@@ -56,14 +56,21 @@ const Login: React.FC = () => {
 
     try {
       setLoading(true);
-      await sendOtp(phoneNumber);
-      showSuccessMessage("OTP sent successfully.");
+      const response = await sendOtp(phoneNumber);
+      if (response.isSuccess) {
+        console.log("responsesendOtp", response.result.code);
 
-      // Navigate to OTP verification screen and pass the phone number and rememberMe
-      router.push({
-        pathname: "/OTP",
-        params: { phoneNumber }, // Truyền rememberMe dưới dạng chuỗi
-      });
+        showSuccessMessage("OTP sent successfully.");
+
+        // Navigate to OTP verification screen and pass the phone number and rememberMe
+        router.push({
+          pathname: "/OTP",
+          params: { phoneNumber }, // Truyền rememberMe dưới dạng chuỗi
+        });
+      } else {
+        showErrorMessage(response.messages.join("\n"));
+        console.log("Error SENT OTP", response.messages);
+      }
     } catch (error) {
       showErrorMessage("Failed to send OTP. Please try again.");
       console.error("Error sending OTP:", error);

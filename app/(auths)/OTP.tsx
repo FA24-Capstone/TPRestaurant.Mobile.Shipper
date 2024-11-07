@@ -15,6 +15,10 @@ import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { login, setProfile } from "@/redux/slices/authSlice";
 import { getAccountByUserId } from "@/api/profileApi";
+import { AppActionResult } from "../types/app_action_result_type";
+import { LoginResult } from "../types/login_type";
+import { AccountProfile } from "../types/profile_type";
+import secureStorage from "@/redux/secureStore";
 
 // Styled components using NativeWind
 const StyledView = styled(View);
@@ -82,42 +86,82 @@ const OTP: React.FC = () => {
   }, [otp]);
 
   const handleVerify = async () => {
+    // Kiểm tra đầu vào trước khi thực hiện
+    if (!phoneNumber) {
+      showErrorMessage("Vui lòng nhập số điện thoại.");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      // Đặt EXPECTED_OTP_LENGTH theo yêu cầu OTP của bạn
+      showErrorMessage("Vui lòng nhập mã OTP hợp lệ.");
+      return;
+    }
+
     try {
       setLoading(true);
-      const otpCode = otp.join(""); // Join OTP array into a single string
+      const otpCode = otp.join(""); // Nối mảng OTP thành chuỗi
 
-      // Use the loginWithOtp function to verify OTP and login
-      const loginData = await loginWithOtp(phoneNumber, otpCode);
-
-      // Dispatching login action if needed
-      dispatch(
-        login({
-          token: loginData.token,
-          refreshToken: loginData.refreshToken || "",
-          mainRole: "SHIPPER",
-          account: loginData.account,
-          deviceResponse: loginData.deviceResponse,
-        })
+      // Gọi hàm loginWithOtp để xác thực OTP và đăng nhập
+      const response: AppActionResult<LoginResult> = await loginWithOtp(
+        phoneNumber,
+        otpCode
       );
 
-      // Optionally, fetch the user's profile after login and dispatch it
-      const profileData = await getAccountByUserId(loginData.account.id);
-      if (profileData.isSuccess) {
+      if (response.isSuccess) {
+        const loginData = response.result;
+        // Lưu trữ token và refreshToken trong SecureStore
+        await secureStorage.setItem("token", loginData.token);
+        await secureStorage.setItem(
+          "refreshToken",
+          loginData.refreshToken || ""
+        );
+        // Dispatch hành động đăng nhập với dữ liệu nhận được
         dispatch(
-          setProfile({
-            ...profileData.result,
-            address: profileData.result.address || "",
+          login({
+            token: loginData.token,
+            refreshToken: loginData.refreshToken || "",
+            mainRole: loginData.mainRole, // Sử dụng mainRole từ API thay vì cố định "SHIPPER"
+            account: loginData.account,
+            deviceResponse: loginData.deviceResponse,
           })
         );
+
+        // Lấy thông tin hồ sơ người dùng sau khi đăng nhập thành công
+        const profileResponse: AppActionResult<AccountProfile> =
+          await getAccountByUserId(loginData.account.id);
+        if (profileResponse.isSuccess) {
+          dispatch(
+            setProfile({
+              ...profileResponse.result,
+              address: profileResponse.result.address || "",
+            })
+          );
+        } else {
+          // Nếu không lấy được hồ sơ, bạn có thể xử lý thêm hoặc hiển thị thông báo
+          showErrorMessage(
+            profileResponse.messages.join("\n") ||
+              "Không thể lấy thông tin hồ sơ."
+          );
+        }
+
+        // Hiển thị thông báo thành công
+        showSuccessMessage("Đăng nhập thành công!");
+
+        // Điều hướng đến màn hình chính sau khi đăng nhập thành công
+        router.replace("/home-screen");
+      } else {
+        console.log("OTP verification failed:", response.messages);
+
+        // Hiển thị các thông báo lỗi từ API
+        const errorMsg =
+          response.messages.join("\n") ||
+          "Mã OTP không hợp lệ. Vui lòng thử lại.";
+        showErrorMessage(errorMsg);
       }
-
-      // Show success message
-      showSuccessMessage("Login successful!");
-
-      // Navigate to the home screen after successful login
-      router.replace("/home-screen");
-    } catch (error) {
-      showErrorMessage("Invalid OTP. Please try again.");
+    } catch (error: any) {
+      // Xử lý các lỗi ngoại lệ không lường trước
+      showErrorMessage("Đăng nhập thất bại. Vui lòng thử lại.");
       console.error("Error during OTP verification:", error);
     } finally {
       setLoading(false);
@@ -127,14 +171,24 @@ const OTP: React.FC = () => {
   const handleResend = async () => {
     setOtp(["", "", "", "", "", ""]);
     inputRefs.current[0]?.focus();
+
     try {
       setLoadingResend(true);
-      // Call the resend OTP function
-      await sendOtp(phoneNumber);
-      showSuccessMessage("OTP resent successfully.");
-      startCountdown();
-    } catch (error) {
-      showErrorMessage("Failed to resend OTP.");
+
+      // Gọi hàm sendOtp để gửi lại OTP
+      const response = await sendOtp(phoneNumber);
+
+      if (response.isSuccess) {
+        showSuccessMessage("OTP đã được gửi lại thành công.");
+        startCountdown();
+      } else {
+        const errorMsg =
+          response.messages.join("\n") || "Gửi lại OTP thất bại.";
+        showErrorMessage(errorMsg);
+      }
+    } catch (error: any) {
+      // Xử lý lỗi ngoại lệ không lường trước
+      showErrorMessage("Đã xảy ra lỗi khi gửi lại OTP. Vui lòng thử lại.");
       console.error("Error resending OTP:", error);
     } finally {
       setLoadingResend(false);

@@ -70,28 +70,18 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
   const handleDriverConfirm = async (orderId: string) => {
     console.log("Driver confirm for order", orderId);
     try {
-      // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
       const response = await updateOrderDetailStatus(orderId, true);
-      console.log("responseUpdatestatus", response);
 
       if (response.isSuccess) {
-        console.log("Order status updated successfully:", response);
-
+        if (setIsDelivering) setIsDelivering(true);
         showSuccessMessage("Đơn hàng này bắt đầu được giao!");
-        if (setIsDelivering) {
-          setIsDelivering(true);
-        }
-        // Hiển thị thông báo thành công và cập nhật giao diện nếu cần
       } else {
-        console.error("Failed to update order status:", response.messages);
         showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
-        // Hiển thị thông báo lỗi
       }
     } catch (error) {
       showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau");
 
       console.error("Error updating order status:", error);
-      // Xử lý lỗi và hiển t
     }
   };
   // console.log("delivery.startDeliveringTime", delivery.startDeliveringTime);

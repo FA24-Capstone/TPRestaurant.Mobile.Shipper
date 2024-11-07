@@ -1,10 +1,10 @@
 //============= get account by phone number to get customerInfoAddressId =============
 
-export interface AccountByPhoneReponse {
-  result: AccountByPhoneResult;
-  isSuccess: boolean;
-  messages: any[];
-}
+// export interface AccountByPhoneReponse {
+//   result: AccountByPhoneResult;
+//   isSuccess: boolean;
+//   messages: any[];
+// }
 
 export interface AccountByPhoneResult {
   id: string;

@@ -5,6 +5,10 @@ import { Order } from "@/app/types/order_type";
 import moment from "moment-timezone";
 import { getOrderMap } from "@/api/orderApi";
 import { ActivityIndicator } from "react-native-paper";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 
 interface LineDeliveryProps {
   orderData: Order;
@@ -31,16 +35,30 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
   }, [orderData.statusId]);
 
   const handleMapPress = async () => {
-    if (orderData.orderId === undefined) return;
+    // Kiểm tra điều kiện ban đầu
+    if (!orderData || !orderData.orderId) {
+      showErrorMessage("Order ID không hợp lệ.");
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await getOrderMap(orderData.orderId);
-      if (response.isSuccess) {
-        Linking.openURL(response.result);
+
+      if (response.isSuccess && response.result) {
+        // Mở liên kết bản đồ nếu có kết quả
+        await Linking.openURL(response.result);
+        showSuccessMessage("Liên kết bản đồ đã được mở.");
       } else {
+        // Hiển thị lỗi nếu không có liên kết bản đồ hoặc không thành công
+        const errorMessage =
+          response.messages.join("\n") || "Không thể lấy liên kết bản đồ.";
+        showErrorMessage(errorMessage);
         console.error("Failed to get map link:", response.messages);
       }
     } catch (error) {
+      // Hiển thị lỗi từ API hoặc lỗi không mong đợi
+      showErrorMessage("Đã xảy ra lỗi khi tải liên kết bản đồ.");
       console.error("Error while fetching map link:", error);
     } finally {
       setLoading(false);

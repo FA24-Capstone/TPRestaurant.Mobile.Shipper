@@ -25,6 +25,8 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import secureStorage from "@/redux/secureStore";
+import { AppActionResult } from "../types/app_action_result_type";
+import { AccountProfile } from "../types/profile_type";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -49,18 +51,21 @@ const SettingScreen: React.FC = () => {
   const fetchCurrentToken = async () => {
     try {
       const response = await getUserTokenByIp(token!);
+
       if (response.isSuccess) {
         const tokenData = response.result as TokenData;
-
-        // console.log("tokenData", tokenData);
-        if (tokenData.deviceToken) {
-          setIsEnableNotification(true);
-        } else {
-          setIsEnableNotification(false);
-        }
+        setIsEnableNotification(!!tokenData.deviceToken);
+      } else {
+        const errorMessage =
+          response.messages?.[0] || "Failed to get user token by IP.";
+        showErrorMessage(errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Failed to fetch current token:", error);
+      showErrorMessage(
+        "An unexpected error occurred while fetching the user token."
+      );
     }
   };
 
@@ -72,8 +77,10 @@ const SettingScreen: React.FC = () => {
     const fetchAccount = async () => {
       try {
         if (accountId) {
-          const response = await getAccountByUserId(accountId);
-          if (response && response.isSuccess) {
+          const response: AppActionResult<AccountProfile> =
+            await getAccountByUserId(accountId);
+
+          if (response.isSuccess) {
             const { firstName, lastName, email, phoneNumber, avatar } =
               response.result;
             setUser({
@@ -84,18 +91,23 @@ const SettingScreen: React.FC = () => {
               avatar: avatar ?? "",
             });
           } else {
-            showErrorMessage("Failed to fetch account data.");
+            // Hiển thị thông báo lỗi từ phản hồi
+            showErrorMessage(
+              response.messages.join("\n") ||
+                "Không thể lấy thông tin tài khoản."
+            );
           }
         }
       } catch (error) {
         console.error("Failed to fetch account data:", error);
         showErrorMessage(
-          "An unexpected error occurred while fetching account data."
+          "Đã xảy ra lỗi không mong muốn khi lấy thông tin tài khoản."
         );
       }
     };
+
     fetchAccount();
-  }, [accountId]); // Add accountId as a dependency
+  }, [accountId]);
 
   // QUAN LAMMMMMMMMMMMMMMMM ===================== START
 
@@ -140,16 +152,20 @@ const SettingScreen: React.FC = () => {
   const handleChangeEnableNotification = async () => {
     try {
       const deviceToken = await AsyncStorage.getItem("device_token");
-      if (deviceToken) {
-        const response = await enableNotification(token!, deviceToken);
-        if (response.isSuccess) {
-          showSuccessMessage("Notification settings updated successfully.");
-          await fetchCurrentToken();
-        } else {
-          showErrorMessage("Failed to update notification settings.");
-        }
-      } else {
+      if (!deviceToken) {
         showErrorMessage("No device token found.");
+        return;
+      }
+
+      const response = await enableNotification(token!, deviceToken);
+      if (response.isSuccess) {
+        showSuccessMessage("Notification settings updated successfully.");
+        await fetchCurrentToken();
+      } else {
+        const errorMessage =
+          response.messages?.[0] || "Failed to update notification settings.";
+        showErrorMessage(errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Failed to change notification settings:", error);

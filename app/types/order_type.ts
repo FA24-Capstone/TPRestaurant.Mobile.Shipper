@@ -74,20 +74,15 @@ export interface AccountCus {
 //======================= Parameters for getting all orders by status =======================
 export interface GetAllOrdersByStatusParams {
   shipperId: string;
-  // orderType?: number;
   pageNumber: number;
   pageSize: number;
   status?: number;
 }
 
 // Response for getting all orders by status
-export interface GetAllOrdersByStatusResponse {
-  result: {
-    items: Order[];
-    totalPages: number;
-  };
-  isSuccess: boolean;
-  messages: string[];
+export interface GetAllOrdersData {
+  items: Order[];
+  totalPages: number;
 }
 
 // Order interface based on your example response
