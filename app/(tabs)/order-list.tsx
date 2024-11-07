@@ -46,7 +46,7 @@ const OrderListDelivery: React.FC = () => {
   const orders = useSelector((state: RootState) => state.orders);
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const accountId = useSelector((state: RootState) => state.auth.account?.id);
+  const accountId = useSelector((state: RootState) => state?.auth?.account?.id);
 
   // useRef để theo dõi trạng thái đã tải của từng `status`
   const loadedStatusRef = useRef({

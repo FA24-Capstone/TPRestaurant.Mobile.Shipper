@@ -25,30 +25,18 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import secureStorage from "@/redux/secureStore";
-import { AppActionResult } from "../types/app_action_result_type";
-import { AccountProfile } from "../types/profile_type";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch();
 
+  const account = useSelector((state: RootState) => state.auth.account);
+
   // Get accountId from Redux state
-  const accountId = useSelector((state: RootState) => state.auth.account?.id);
   const token = useSelector((state: RootState) => state.auth.token);
   const [isEnableNotification, setIsEnableNotification] = useState(false);
-  const [form, setForm] = useState({
-    darkMode: false,
-    emailNotifications: true,
-  });
-  const [user, setUser] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
-    avatar: "",
-  });
 
-  const fetchCurrentToken = async () => {
+  const fetchCurrentToken = () => async (dispatch: any) => {
     try {
       const response = await getUserTokenByIp(token!);
 
@@ -70,44 +58,10 @@ const SettingScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCurrentToken();
-  }, []);
-
-  useEffect(() => {
-    const fetchAccount = async () => {
-      try {
-        if (accountId) {
-          const response: AppActionResult<AccountProfile> =
-            await getAccountByUserId(accountId);
-
-          if (response.isSuccess) {
-            const { firstName, lastName, email, phoneNumber, avatar } =
-              response.result;
-            setUser({
-              firstName: firstName ?? "",
-              lastName: lastName ?? "",
-              email: email ?? "",
-              phoneNumber: phoneNumber ?? "",
-              avatar: avatar ?? "",
-            });
-          } else {
-            // Hiển thị thông báo lỗi từ phản hồi
-            showErrorMessage(
-              response.messages.join("\n") ||
-                "Không thể lấy thông tin tài khoản."
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch account data:", error);
-        showErrorMessage(
-          "Đã xảy ra lỗi không mong muốn khi lấy thông tin tài khoản."
-        );
-      }
-    };
-
-    fetchAccount();
-  }, [accountId]);
+    if (!account) {
+      dispatch(fetchCurrentToken() as any);
+    }
+  }, [dispatch, account]);
 
   // QUAN LAMMMMMMMMMMMMMMMM ===================== START
 
@@ -176,27 +130,21 @@ const SettingScreen: React.FC = () => {
   };
 
   // Handle logout
-  const handleLogout = () => {
-    Alert.alert(
-      "Log Out",
-      "Are you sure you want to log out?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Log Out",
-          style: "destructive",
-          onPress: async () => {
-            // Xóa token và refreshToken từ SecureStore
-            await secureStorage.removeItem("token");
-            await secureStorage.removeItem("refreshToken");
-            dispatch(logout());
-            showSuccessMessage("Logged out successfully.");
-            router.replace("/login");
-          },
+  const handleLogout = async () => {
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          await secureStorage.removeItem("token");
+          await secureStorage.removeItem("refreshToken");
+          dispatch(logout());
+          router.replace("/login");
+          showSuccessMessage("Logged out successfully.");
         },
-      ],
-      { cancelable: true }
-    );
+      },
+    ]);
   };
 
   return (
@@ -212,7 +160,7 @@ const SettingScreen: React.FC = () => {
               alt=""
               source={{
                 uri:
-                  user.avatar ||
+                  account?.avatar ||
                   "https://i2.wp.com/vdostavka.ru/wp-content/uploads/2019/05/no-avatar.png?fit=512%2C512&ssl=1",
               }}
               style={styles.profileAvatar}
@@ -233,23 +181,23 @@ const SettingScreen: React.FC = () => {
         <View>
           <Text
             style={styles.profileName}
-          >{`${user.firstName} ${user.lastName}`}</Text>
+          >{`${account?.firstName} ${account?.lastName}`}</Text>
           <Text className="font-medium text-lg mt-2 text-center text-[#970C1A]">
             Shipper Nhà Hàng Thiên Phú
           </Text>
           <Text style={styles.profileAddress}>
-            +84 {user.phoneNumber || "Địa chỉ chưa được cập nhật"}
+            +84 {account?.phoneNumber || "Địa chỉ chưa được cập nhật"}
           </Text>
         </View>
       </View>
 
       <ScrollView>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+          <Text style={styles.sectionTitle}>Tuỳ Chọn</Text>
 
           <TouchableOpacity
             onPress={() => {
-              // handle onPress
+              router.push("/my-profile");
             }}
             style={styles.row}
           >
@@ -301,7 +249,7 @@ const SettingScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Resources</Text>
+          <Text style={styles.sectionTitle}>Tài Nguyên</Text>
 
           <TouchableOpacity
             onPress={() => {

@@ -11,6 +11,8 @@ import OrderDetail from "./order-detail";
 import OrderListDelivery from "./order-list";
 import OrderUpload from "@/components/Pages/Order/OrderUpload";
 import OrderUploaded from "./order-upload";
+import MyProfile from "./my-profile";
+import { useRouter } from "expo-router";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator(); // Stack for detailed screens
@@ -49,6 +51,8 @@ const OrderStack = () => {
 };
 
 const Page = () => {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <Tab.Navigator
@@ -146,6 +150,22 @@ const Page = () => {
             tabBarButton: () => null, // Hide this screen from the tab bar
             headerShown: true, // Show header for this screen
             header: () => <CustomHeaderDetail title="Chụp ảnh hoàn thành" />, // Custom header
+            tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
+          }}
+        />
+
+        <Tab.Screen
+          name="my-profile"
+          component={MyProfile} // Use the stack navigator for orders
+          options={{
+            tabBarButton: () => null, // Hide this screen from the tab bar
+            headerShown: true, // Show header for this screen
+            header: () => (
+              <CustomHeaderDetail
+                title="Thông tin của tôi"
+                onBackPress={() => router.push("/setting")}
+              />
+            ), // Custom header
             tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
           }}
         />

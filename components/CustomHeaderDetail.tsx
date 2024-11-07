@@ -5,9 +5,13 @@ import { useRouter } from "expo-router";
 
 interface CustomHeaderDetailProps {
   title: string;
+  onBackPress?: () => void; // Optional onBackPress prop
 }
 
-const CustomHeaderDetail: React.FC<CustomHeaderDetailProps> = ({ title }) => {
+const CustomHeaderDetail: React.FC<CustomHeaderDetailProps> = ({
+  title,
+  onBackPress,
+}) => {
   const router = useRouter();
 
   return (
@@ -28,7 +32,10 @@ const CustomHeaderDetail: React.FC<CustomHeaderDetailProps> = ({ title }) => {
       }}
     >
       {/* Back Button */}
-      <TouchableOpacity onPress={() => router.back()} className="mr-4">
+      <TouchableOpacity
+        onPress={onBackPress ? onBackPress : () => router.back()}
+        className="mr-4"
+      >
         <MaterialCommunityIcons name="arrow-left" size={30} color="black" />
       </TouchableOpacity>
 

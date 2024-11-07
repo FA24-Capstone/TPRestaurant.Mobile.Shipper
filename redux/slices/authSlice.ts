@@ -5,13 +5,14 @@ import { getAccountByUserId } from "@/api/profileApi";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { jwtDecode } from "jwt-decode";
+import { AccountProfile } from "@/app/types/profile_type";
 
 interface AuthState {
   isLoggedIn: boolean;
   token: string | null;
   refreshToken: string | null;
   mainRole: string | null;
-  account: Account | null;
+  account: AccountProfile | null;
   deviceResponse: any | null;
 }
 
@@ -91,7 +92,7 @@ const authSlice = createSlice({
         token: string;
         refreshToken: string;
         mainRole: string | null;
-        account: Account | null;
+        account: AccountProfile | null;
         deviceResponse: any | null;
       }>
     ) {
