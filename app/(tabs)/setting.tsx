@@ -1,5 +1,9 @@
 import { getAccountByUserId } from "@/api/profileApi";
-import { enableNotification, getUserTokenByIp } from "@/api/tokenApi";
+import {
+  deleteToken,
+  enableNotification,
+  getUserTokenByIp,
+} from "@/api/tokenApi";
 import { logout } from "@/redux/slices/authSlice";
 import { RootState } from "@/redux/store";
 import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -36,13 +40,17 @@ const SettingScreen: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const [isEnableNotification, setIsEnableNotification] = useState(false);
 
-  const fetchCurrentToken = () => async (dispatch: any) => {
+  const fetchCurrentToken = () => async () => {
     try {
       const response = await getUserTokenByIp(token!);
-
+      console.log("response", response);
       if (response.isSuccess) {
         const tokenData = response.result as TokenData;
-        setIsEnableNotification(!!tokenData.deviceToken);
+        console.log("tokenData", tokenData);
+        if (tokenData.deviceToken) {
+          await secureStorage.setItem("device_token", tokenData.deviceToken);
+          setIsEnableNotification(true);
+        }
       } else {
         const errorMessage =
           response.messages?.[0] || "Failed to get user token by IP.";
@@ -58,10 +66,8 @@ const SettingScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!account) {
-      dispatch(fetchCurrentToken() as any);
-    }
-  }, [dispatch, account]);
+    fetchCurrentToken();
+  }, [account]);
 
   // QUAN LAMMMMMMMMMMMMMMMM ===================== START
 
@@ -82,7 +88,7 @@ const SettingScreen: React.FC = () => {
     try {
       const token = await messaging().getToken();
       if (token) {
-        await AsyncStorage.setItem("device_token", token);
+        await secureStorage.setItem("device_token", token);
         return token;
       }
     } catch (error) {
@@ -105,13 +111,13 @@ const SettingScreen: React.FC = () => {
 
   const handleChangeEnableNotification = async () => {
     try {
-      const deviceToken = await AsyncStorage.getItem("device_token");
-      if (!deviceToken) {
-        showErrorMessage("No device token found.");
-        return;
-      }
-
-      const response = await enableNotification(token!, deviceToken);
+      setIsEnableNotification(!isEnableNotification);
+      let deviceToken = await secureStorage.getItem("device_token");
+      const response = await enableNotification(
+        token!,
+        isEnableNotification ? undefined : deviceToken!
+      );
+      console.log(`enableNotification response`, response);
       if (response.isSuccess) {
         showSuccessMessage("Notification settings updated successfully.");
         await fetchCurrentToken();
@@ -137,9 +143,23 @@ const SettingScreen: React.FC = () => {
         text: "Log Out",
         style: "destructive",
         onPress: async () => {
-          await secureStorage.removeItem("token");
-          await secureStorage.removeItem("refreshToken");
-          dispatch(logout());
+          let token = await secureStorage.getItem("token");
+          console.log("hehehe", token);
+          if (token) {
+            const response = await getUserTokenByIp(token);
+            console.log("hehehe2", response);
+            if (response.isSuccess) {
+              const tokenData = response.result as TokenData;
+              await deleteToken(tokenData.tokenId);
+              await secureStorage.removeItem("token");
+              await secureStorage.removeItem("refreshToken");
+              dispatch(logout());
+            } else {
+              await secureStorage.removeItem("token");
+              await secureStorage.removeItem("refreshToken");
+              dispatch(logout());
+            }
+          }
           router.replace("/login");
           showSuccessMessage("Logged out successfully.");
         },

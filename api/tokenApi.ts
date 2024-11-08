@@ -22,9 +22,10 @@ export const getUserTokenByIp = async (
 // ==================== enableNotification API ====================
 export const enableNotification = async (
   token: string,
-  deviceToken: string
-): Promise<AppActionResult<string>> => {
-  const response = await axios.post<AppActionResult<string>>(
+  deviceToken?: string
+): Promise<AppActionResult> => {
+  console.log("deviceToken", deviceToken);
+  const response = await axios.post<AppActionResult>(
     `${API_URL}/token/enable-notification?deviceToken=${deviceToken}`,
     {},
     {
@@ -33,6 +34,13 @@ export const enableNotification = async (
         Authorization: `Bearer ${token}`,
       },
     }
+  );
+  return response.data;
+};
+
+export const deleteToken = async (id: string): Promise<AppActionResult> => {
+  const response = await axios.delete<AppActionResult>(
+    `${API_URL}/token/delete-token?tokenId=${id}`
   );
   return response.data;
 };

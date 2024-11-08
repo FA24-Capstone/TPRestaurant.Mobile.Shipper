@@ -19,6 +19,8 @@ import { AppActionResult } from "../types/app_action_result_type";
 import { LoginResult } from "../types/login_type";
 import { AccountProfile } from "../types/profile_type";
 import secureStorage from "@/redux/secureStore";
+import messaging from "@react-native-firebase/messaging";
+import { enableNotification } from "@/api/tokenApi";
 
 // Styled components using NativeWind
 const StyledView = styled(View);
@@ -80,7 +82,27 @@ const OTP: React.FC = () => {
       inputRefs.current[index - 1]?.focus();
     }
   };
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
+    if (enabled) {
+      getToken();
+    }
+  }
+  const getToken = async () => {
+    const token = await messaging().getToken();
+    if (token) {
+      await secureStorage.setItem("device_token", token);
+      return token;
+    }
+  };
+
+  useEffect(() => {
+    requestUserPermission();
+  }, []);
   useEffect(() => {
     setIsDisabled(otp.some((digit) => digit === ""));
   }, [otp]);
@@ -116,6 +138,19 @@ const OTP: React.FC = () => {
           "refreshToken",
           loginData.refreshToken || ""
         );
+        let deviceToken = await secureStorage.getItem("device_token");
+        let token = await secureStorage.getItem("token");
+        if (token && deviceToken) {
+          const responseEnableNotification = await enableNotification(
+            loginData.token,
+            token
+          );
+          if (responseEnableNotification.isSuccess) {
+            showSuccessMessage("Đã bật thông báo!");
+          } else {
+            showErrorMessage(responseEnableNotification.messages.join("\n"));
+          }
+        }
         // Dispatch hành động đăng nhập với dữ liệu nhận được
         dispatch(
           login({
