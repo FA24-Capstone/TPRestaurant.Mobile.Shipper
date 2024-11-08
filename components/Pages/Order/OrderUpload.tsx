@@ -33,7 +33,6 @@ interface RouteParams {
 
 const OrderUpload: React.FC = () => {
   const dispatch = useAppDispatch();
-
   const route = useRoute();
   const { orderId } = route.params as RouteParams;
   console.log("orderId", orderId);

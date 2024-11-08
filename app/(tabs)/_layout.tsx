@@ -13,6 +13,7 @@ import OrderUpload from "@/components/Pages/Order/OrderUpload";
 import OrderUploaded from "./order-upload";
 import MyProfile from "./my-profile";
 import { useRouter } from "expo-router";
+import UpdateProfile from "./update-profile";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator(); // Stack for detailed screens
@@ -162,8 +163,23 @@ const Page = () => {
             headerShown: true, // Show header for this screen
             header: () => (
               <CustomHeaderDetail
-                title="Thông tin của tôi"
+                title="Hồ sơ của tôi"
                 onBackPress={() => router.push("/setting")}
+              />
+            ), // Custom header
+            tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
+          }}
+        />
+        <Tab.Screen
+          name="update-profile"
+          component={UpdateProfile} // Use the stack navigator for orders
+          options={{
+            tabBarButton: () => null, // Hide this screen from the tab bar
+            headerShown: true, // Show header for this screen
+            header: () => (
+              <CustomHeaderDetail
+                title="Cập nhật hồ sơ"
+                onBackPress={() => router.push("/my-profile")}
               />
             ), // Custom header
             tabBarStyle: { display: "none" }, // Hide bottom tab for this screen

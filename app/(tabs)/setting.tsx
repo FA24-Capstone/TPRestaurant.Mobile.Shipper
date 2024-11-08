@@ -172,7 +172,7 @@ const SettingScreen: React.FC = () => {
       <View style={styles.profile}>
         <TouchableOpacity
           onPress={() => {
-            // handle onPress
+            router.push("/my-profile");
           }}
         >
           <View style={styles.profileAvatarWrapper}>
@@ -188,7 +188,7 @@ const SettingScreen: React.FC = () => {
 
             <TouchableOpacity
               onPress={() => {
-                // handle onPress
+                router.push("/my-profile");
               }}
             >
               <View style={styles.profileAction}>

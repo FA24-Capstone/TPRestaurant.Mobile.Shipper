@@ -82,6 +82,7 @@ const OTP: React.FC = () => {
       inputRefs.current[index - 1]?.focus();
     }
   };
+
   async function requestUserPermission() {
     const authStatus = await messaging().requestPermission();
     const enabled =
@@ -103,6 +104,7 @@ const OTP: React.FC = () => {
   useEffect(() => {
     requestUserPermission();
   }, []);
+
   useEffect(() => {
     setIsDisabled(otp.some((digit) => digit === ""));
   }, [otp]);
