@@ -353,7 +353,11 @@ const OrderListDelivery: React.FC = () => {
       </Text>
     ) : (
       <OrderList
-        orders={orders.ordersByStatus.pending}
+        orders={[...orders.ordersByStatus.pending].sort(
+          (a, b) =>
+            new Date(b.assignedTime).getTime() -
+            new Date(a.assignedTime).getTime()
+        )}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -370,7 +374,11 @@ const OrderListDelivery: React.FC = () => {
       </Text>
     ) : (
       <OrderList
-        orders={orders.ordersByStatus.delivering}
+        orders={[...orders.ordersByStatus.delivering].sort(
+          (a, b) =>
+            new Date(b.startDeliveringTime).getTime() -
+            new Date(a.startDeliveringTime).getTime()
+        )}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -386,7 +394,11 @@ const OrderListDelivery: React.FC = () => {
       </Text>
     ) : (
       <OrderList
-        orders={orders.ordersByStatus.delivered}
+        orders={[...orders.ordersByStatus.delivered].sort(
+          (a, b) =>
+            new Date(b.deliveredTime).getTime() -
+            new Date(a.deliveredTime).getTime()
+        )}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
@@ -402,7 +414,11 @@ const OrderListDelivery: React.FC = () => {
       </Text>
     ) : (
       <OrderList
-        orders={orders.ordersByStatus.cancelled}
+        orders={[...orders.ordersByStatus.cancelled].sort(
+          (a, b) =>
+            new Date(b.assignedTime).getTime() -
+            new Date(a.assignedTime).getTime()
+        )}
         selectedOrders={selectedOrders}
         onSelectOrder={handleSelectOrder}
         onViewDetail={(orderId) =>
