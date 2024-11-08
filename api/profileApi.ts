@@ -23,3 +23,51 @@ export const getAccountByUserId = async (
 
   return response.data;
 };
+
+// Hàm cập nhật thông tin tài khoản người dùng
+export const updateAccount = async (
+  accountId: string,
+  firstName: string,
+  lastName: string,
+  dob: string, // should be in ISO format (e.g., '2024-10-30T23:55:25.028Z')
+  gender: boolean,
+  image: string // assuming the image is optional and provided as a File object
+): Promise<AppActionResult<null>> => {
+  const formData = new FormData();
+  formData.append("AccountId", accountId);
+  formData.append("FirstName", firstName);
+  formData.append("LastName", lastName);
+  formData.append("DOB", dob);
+  formData.append("Gender", gender.toString());
+  if (image) {
+    const filename = image.split("/").pop();
+    const type = "image/jpeg"; // You can change this if needed
+    formData.append("Image", {
+      uri: image,
+      name: filename,
+      type: type,
+    } as any);
+  }
+
+  console.log("dataUpload", {
+    accountId,
+    firstName,
+    lastName,
+    dob,
+    image,
+    gender,
+  });
+
+  const response = await axios.put<AppActionResult<null>>(
+    `${API_URL}/api/account/update-account`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 10000, // Optional: set a timeout for the request
+    }
+  );
+
+  return response.data;
+};

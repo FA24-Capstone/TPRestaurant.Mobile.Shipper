@@ -1,11 +1,13 @@
 import React, { memo } from "react";
-import { View, Text } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Avatar, IconButton } from "react-native-paper";
 import { Feather } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { useRouter } from "expo-router";
 
 const WelcomeHeader: React.FC = () => {
+  const router = useRouter();
   const profile = useSelector((state: RootState) => state.auth.account);
 
   // Set avatar URL
@@ -26,11 +28,13 @@ const WelcomeHeader: React.FC = () => {
       </View>
       <View className="flex-row items-center">
         <IconButton icon={() => <Feather name="bell" size={24} />} />
-        <Avatar.Image
-          size={40}
-          source={{ uri: avatarUri }}
-          style={{ backgroundColor: "white" }}
-        />
+        <TouchableOpacity onPress={() => router.push("/my-profile")}>
+          <Avatar.Image
+            size={40}
+            source={{ uri: avatarUri }}
+            style={{ backgroundColor: "white" }}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
