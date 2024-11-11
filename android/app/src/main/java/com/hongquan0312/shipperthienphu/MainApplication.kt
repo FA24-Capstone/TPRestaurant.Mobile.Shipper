@@ -1,4 +1,4 @@
-package com.hongquan0312.shipperthienphu
+package com.quandhse170057.shipperthienphu
 
 import android.app.Application
 import android.content.res.Configuration

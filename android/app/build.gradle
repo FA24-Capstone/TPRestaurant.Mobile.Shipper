@@ -109,9 +109,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.hongquan0312.shipperthienphu'
+    namespace 'com.quandhse170057.shipperthienphu'
     defaultConfig {
-        applicationId 'com.hongquan0312.shipperthienphu'
+        applicationId 'com.quandhse170057.shipperthienphu'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
