@@ -14,6 +14,7 @@ import OrderUploaded from "./order-upload";
 import MyProfile from "./my-profile";
 import { useRouter } from "expo-router";
 import UpdateProfile from "./update-profile";
+import NotificationsScreen from "./notifications";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator(); // Stack for detailed screens
@@ -122,7 +123,7 @@ const Page = () => {
           name="setting"
           component={require("./setting").default}
           options={{
-            tabBarLabel: "Settings",
+            tabBarLabel: "Cài đặt",
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons
                 name="account"
@@ -182,6 +183,16 @@ const Page = () => {
                 onBackPress={() => router.push("/my-profile")}
               />
             ), // Custom header
+            tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
+          }}
+        />
+        <Tab.Screen
+          name="notifications"
+          component={NotificationsScreen} // Use the stack navigator for orders
+          options={{
+            tabBarButton: () => null, // Hide this screen from the tab bar
+            headerShown: true, // Show header for this screen
+            header: () => <CustomHeaderDetail title="Thông báo" />, // Custom header
             tabBarStyle: { display: "none" }, // Hide bottom tab for this screen
           }}
         />

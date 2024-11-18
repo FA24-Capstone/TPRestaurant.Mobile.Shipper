@@ -27,7 +27,9 @@ const WelcomeHeader: React.FC = () => {
         </Text>
       </View>
       <View className="flex-row items-center">
-        <IconButton icon={() => <Feather name="bell" size={24} />} />
+        <TouchableOpacity onPress={() => router.push("/notifications")}>
+          <IconButton icon={() => <Feather name="bell" size={24} />} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push("/my-profile")}>
           <Avatar.Image
             size={40}
