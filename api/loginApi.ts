@@ -10,35 +10,33 @@ import {
 } from "@/components/FlashMessageHelpers";
 import { AppActionResult } from "@/app/types/app_action_result_type";
 import { LoginResult } from "@/app/types/login_type";
+import apiClient from "./config";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
 
-// Function to send OTP
+//=============== Send OTP ===============
 export const sendOtp = async (
   phoneNumber: string
 ): Promise<AppActionResult> => {
-  const response = await axios.post(`${API_URL}/api/account/send-otp`, null, {
-    params: {
-      phoneNumber,
-      otp: 0, // Assuming this parameter is needed by your API; adjust if necessary
-    },
-  });
+  const response = await apiClient.post<AppActionResult>(
+    `/api/account/send-otp`,
+    null, // Không có body
+    {
+      params: { phoneNumber, otp: 0 }, // Thêm tham số query
+    }
+  );
 
   return response.data;
 };
 
 // Function to login using OTP
-// Hàm đăng nhập bằng OTP
 export const loginWithOtp = async (
   phoneNumber: string,
   otpCode: string
 ): Promise<AppActionResult<LoginResult>> => {
-  const response = await axios.post<AppActionResult<LoginResult>>(
-    `${API_URL}/api/account/login`,
-    {
-      phoneNumber,
-      otpCode,
-    }
+  const response = await apiClient.post<AppActionResult<LoginResult>>(
+    `/api/account/login`,
+    { phoneNumber, otpCode } // Body của request
   );
 
   return response.data;
