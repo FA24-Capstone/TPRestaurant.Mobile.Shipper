@@ -4,6 +4,7 @@ import axios from "axios";
 import { showErrorMessage } from "@/components/FlashMessageHelpers";
 import { AppActionResult } from "@/app/types/app_action_result_type";
 import { AccountProfile } from "@/app/types/profile_type";
+import apiClient from "./config";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -12,18 +13,14 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export const getAccountByUserId = async (
   userId: string
 ): Promise<AppActionResult<AccountProfile>> => {
-  const response = await axios.get<AppActionResult<AccountProfile>>(
-    `${API_URL}/api/account/get-account-by-user-id/${userId}`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+  const response = await apiClient.get<AppActionResult<AccountProfile>>(
+    `/api/account/get-account-by-user-id/${userId}`
   );
 
   return response.data;
 };
 
+// ==================== Update Account ====================
 // Hàm cập nhật thông tin tài khoản người dùng
 export const updateAccount = async (
   accountId: string,
@@ -58,8 +55,8 @@ export const updateAccount = async (
     gender,
   });
 
-  const response = await axios.put<AppActionResult<null>>(
-    `${API_URL}/api/account/update-account`,
+  const response = await apiClient.put<AppActionResult<null>>(
+    `/api/account/update-account`,
     formData,
     {
       headers: {
