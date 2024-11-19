@@ -4,10 +4,13 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Order } from "@/app/types/order_type";
 import CancelOrderModal from "./CancelOrderModal";
-import { cancelDeliveringOrder } from "@/api/orderApi";
+import { cancelDeliveringOrder, updateOrderDetailStatus } from "@/api/orderApi";
 import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "@/redux/store";
-import { showErrorMessage } from "@/components/FlashMessageHelpers";
+import {
+  showErrorMessage,
+  showSuccessMessage,
+} from "@/components/FlashMessageHelpers";
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 
 // Define the types for navigation routes
@@ -29,6 +32,7 @@ const OrderActions: React.FC<OrderActionsProps> = ({
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
+  const [isDelivering, setIsDelivering] = useState<boolean>(false);
 
   const handleDelivered = () => {
     // console.log("orderData.orderId", orderData.orderId);
@@ -36,8 +40,34 @@ const OrderActions: React.FC<OrderActionsProps> = ({
     navigation.navigate("OrderUpload", { orderId: orderData.orderId });
   };
 
-  const handleDelivering = () => {
+  const handleDelivering = async () => {
     console.log("Delivering");
+    try {
+      // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
+      const response = await updateOrderDetailStatus(orderData.orderId, true);
+      console.log("responseUpdatestatus", response);
+
+      if (response.isSuccess) {
+        console.log("Order status updated successfully:", response);
+        if (setIsDelivering) {
+          setIsDelivering(true);
+        }
+
+        onRefetch();
+
+        showSuccessMessage("Đơn hàng này bắt đầu được giao!");
+        // Hiển thị thông báo thành công và cập nhật giao diện nếu cần
+      } else {
+        console.error("Failed to update order status:", response.messages);
+        showErrorMessage(response.messages.join("\n"));
+        // Hiển thị thông báo lỗi
+      }
+    } catch (error) {
+      showErrorMessage("Error updating order status: " + error);
+
+      console.error("Error updating order status:", error);
+      // Xử lý lỗi và hiển thị thông báo lỗi
+    }
   };
 
   const handleCancelOrder = () => {
