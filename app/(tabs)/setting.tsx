@@ -29,6 +29,7 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import secureStorage from "@/redux/secureStore";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -40,16 +41,17 @@ const SettingScreen: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const [isEnableNotification, setIsEnableNotification] = useState(false);
 
-  const fetchCurrentToken = () => async () => {
+  const fetchCurrentToken = async () => {
     try {
       const response = await getUserTokenByIp(token!);
-      console.log("response", response);
       if (response.isSuccess) {
         const tokenData = response.result as TokenData;
         console.log("tokenData", tokenData);
         if (tokenData.deviceToken) {
           await secureStorage.setItem("device_token", tokenData.deviceToken);
           setIsEnableNotification(true);
+        } else {
+          setIsEnableNotification(false);
         }
       } else {
         const errorMessage =
@@ -112,10 +114,10 @@ const SettingScreen: React.FC = () => {
   const handleChangeEnableNotification = async () => {
     try {
       setIsEnableNotification(!isEnableNotification);
-      let deviceToken = await secureStorage.getItem("device_token");
+      let deviceToken = await getToken();
       const response = await enableNotification(
         token!,
-        isEnableNotification ? undefined : deviceToken!
+        !isEnableNotification ? deviceToken : undefined
       );
       console.log(`enableNotification response`, response);
       if (response.isSuccess) {
