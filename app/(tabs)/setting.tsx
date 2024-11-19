@@ -269,9 +269,9 @@ const SettingScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          {/* <Text style={styles.sectionTitle}>Tài Nguyên</Text> */}
+          {/* <Text style={styles.sectionTitle}>Tài Nguyên</Text>
 
-          {/* <TouchableOpacity
+          <TouchableOpacity
             onPress={() => {
               // handle onPress
             }}
