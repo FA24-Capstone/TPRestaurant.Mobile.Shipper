@@ -100,7 +100,7 @@ const Login: React.FC = () => {
               Chào mừng quay trở lại
             </StyledText>
             <StyledText className="text-base text-gray-700">
-              Please input your phone number
+              Vui lòng nhập số điện thoại của bạn
             </StyledText>
           </StyledView>
 
