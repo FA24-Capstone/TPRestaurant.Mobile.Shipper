@@ -70,7 +70,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
   const handleDriverConfirm = async (orderId: string) => {
     console.log("Driver confirm for order", orderId);
     try {
-      const response = await updateOrderDetailStatus(orderId, true);
+      const response = await updateOrderDetailStatus(orderId, true, 8);
 
       if (response.isSuccess) {
         if (setIsDelivering) setIsDelivering(true);

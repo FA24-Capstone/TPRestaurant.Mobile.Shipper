@@ -128,13 +128,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ orderData }) => {
         </Text>
       </View>
       <View className="flex-row justify-between mt-2">
-        <Text className="text-gray-600 text-base font-medium">Phương thức</Text>
-        <Text
-          className={`${
-            orderData.deposit === null ? "text-yellow-600" : "text-green-600"
-          } uppercase text-base font-bold`}
-        >
-          {orderData.deposit === null ? "Chưa thanh toán" : "Đã chuyển khoản"}
+        <Text className="text-gray-600 text-base font-medium">
+          Trạng thái thanh toán
+        </Text>
+        <Text className={` text-green-600 uppercase text-base font-bold`}>
+          Đã chuyển khoản
         </Text>
       </View>
     </View>

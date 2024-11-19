@@ -44,7 +44,11 @@ const OrderActions: React.FC<OrderActionsProps> = ({
     console.log("Delivering");
     try {
       // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
-      const response = await updateOrderDetailStatus(orderData.orderId, true);
+      const response = await updateOrderDetailStatus(
+        orderData.orderId,
+        true,
+        8
+      );
       console.log("responseUpdatestatus", response);
 
       if (response.isSuccess) {

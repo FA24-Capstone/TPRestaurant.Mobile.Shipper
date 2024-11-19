@@ -136,13 +136,19 @@ export const getOrderId = async (
 
 export const updateOrderDetailStatus = async (
   orderId: string,
-  isSuccessful: boolean
+  isSuccessful: boolean,
+  status: number, // Status là optional
+  asCustomer: boolean = false // Default asCustomer là false
 ): Promise<AppActionResult<string>> => {
   const response = await apiClient.put<AppActionResult<string>>(
     `/order/update-order-status/${orderId}`,
     null,
     {
-      params: { isSuccessful },
+      params: {
+        isSuccessful,
+        status,
+        asCustomer,
+      },
     }
   );
 

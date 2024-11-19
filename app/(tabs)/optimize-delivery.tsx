@@ -203,7 +203,9 @@ const OptimizeDelivery: React.FC = () => {
     try {
       // Update the status for all selected orders
       const responses = await Promise.all(
-        selectedOrders.map((orderId) => updateOrderDetailStatus(orderId, true))
+        selectedOrders.map((orderId) =>
+          updateOrderDetailStatus(orderId, true, 8)
+        )
       );
 
       const allSuccess = responses.every((response) => response.isSuccess);

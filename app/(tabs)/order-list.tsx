@@ -288,7 +288,7 @@ const OrderListDelivery: React.FC = () => {
     try {
       const responses = await Promise.all(
         allPendingOrders.map((orderId) =>
-          updateOrderDetailStatus(orderId, true)
+          updateOrderDetailStatus(orderId, true, 8)
         )
       );
 
