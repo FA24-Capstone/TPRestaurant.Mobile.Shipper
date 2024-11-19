@@ -76,11 +76,20 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         if (setIsDelivering) setIsDelivering(true);
         showSuccessMessage("Đơn hàng này bắt đầu được giao!");
       } else {
-        showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
+        showErrorMessage(
+          `Lỗi với đơn hàng ${orderId}: ${
+            response.messages || "Không xác định"
+          }.`
+        );
       }
     } catch (error) {
-      showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau");
-
+      if (error instanceof Error) {
+        showErrorMessage(
+          error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
+        );
+      } else {
+        showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
+      }
       console.error("Error updating order status:", error);
     }
   };
