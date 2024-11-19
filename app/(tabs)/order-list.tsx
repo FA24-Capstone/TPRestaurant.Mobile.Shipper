@@ -288,7 +288,7 @@ const OrderListDelivery: React.FC = () => {
     try {
       const responses = await Promise.all(
         allPendingOrders.map((orderId) =>
-          updateOrderDetailStatus(orderId, true)
+          updateOrderDetailStatus(orderId, true, 8)
         )
       );
 
@@ -307,19 +307,26 @@ const OrderListDelivery: React.FC = () => {
             response,
             orderId: allPendingOrders[index],
           }))
-          .filter((item) => !item.response.isSuccess)
-          .map((item) => item.orderId);
+          .filter((item) => !item.response.isSuccess);
 
-        showErrorMessage(
-          `Đã có lỗi xảy ra với đơn hàng: ${failedOrders.join(
-            ", "
-          )}. Vui lòng thử lại.`
-        );
+        failedOrders.forEach(({ orderId, response }) => {
+          showErrorMessage(
+            `Lỗi với đơn hàng ${orderId}: ${
+              response.messages || "Không xác định"
+            }.`
+          );
+        });
         setModalVisible(false);
       }
     } catch (error) {
       console.error("Error updating order statuses:", error);
-      showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau.");
+      if (error instanceof Error) {
+        showErrorMessage(
+          error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
+        );
+      } else {
+        showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
+      }
       setModalVisible(false);
     } finally {
       setProcessing(false);

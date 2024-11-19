@@ -26,7 +26,9 @@ export const enableNotification = async (
 ): Promise<AppActionResult> => {
   console.log("deviceToken", deviceToken);
   const response = await axios.post<AppActionResult>(
-    `${API_URL}/token/enable-notification?deviceToken=${deviceToken}`,
+    `${API_URL}/token/enable-notification${
+      deviceToken ? `?deviceToken=${deviceToken}` : ""
+    }`,
     {},
     {
       headers: {

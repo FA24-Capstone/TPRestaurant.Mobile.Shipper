@@ -28,7 +28,7 @@ export const updateAccount = async (
   lastName: string,
   dob: string, // should be in ISO format (e.g., '2024-10-30T23:55:25.028Z')
   gender: boolean,
-  image: string // assuming the image is optional and provided as a File object
+  image?: string // assuming the image is optional and provided as a File object
 ): Promise<AppActionResult<null>> => {
   const formData = new FormData();
   formData.append("AccountId", accountId);

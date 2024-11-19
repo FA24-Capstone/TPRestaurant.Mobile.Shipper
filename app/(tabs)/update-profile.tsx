@@ -102,13 +102,15 @@ const UpdateProfile = () => {
       .format("YYYY-MM-DD");
 
     try {
+      const isAvatarUpdated = avatar && avatar !== account.avatar;
+
       const response = await updateAccount(
         account.id,
         firstName,
         lastName,
         formattedDob,
         gender,
-        avatar
+        isAvatarUpdated ? avatar : undefined // Truyền avatar nếu đã thay đổi
       );
       // Handle success notification or navigation here
       if (response.isSuccess) {
@@ -137,7 +139,19 @@ const UpdateProfile = () => {
 
   const handleDateConfirm = (selectedDate: Date) => {
     const formattedDate = moment(selectedDate).format("DD/MM/YYYY");
-    setDob(formattedDate);
+
+    const today = new Date();
+    const minDate = new Date(
+      today.getFullYear() - 16,
+      today.getMonth(),
+      today.getDate()
+    );
+
+    if (selectedDate > minDate) {
+      showErrorMessage("Shipper Thiên Phú phải từ 16 tuổi trở lên!");
+    } else {
+      setDob(formattedDate); // Lưu ngày sinh ở định dạng yyyy-mm-dd
+    }
     hideDatePicker();
   };
 
@@ -257,7 +271,7 @@ const UpdateProfile = () => {
                 label="Ngày sinh"
                 value={dob}
                 mode="flat"
-                className="flex-1 bg-white font-semibold text-lg  rounded-md "
+                className="flex-1 bg-white font-semibold text-lg rounded-md"
                 underlineColor="transparent"
                 style={{ backgroundColor: "transparent" }}
                 theme={{ colors: { primary: "#888" } }}
@@ -269,6 +283,13 @@ const UpdateProfile = () => {
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
+                maximumDate={
+                  new Date(
+                    new Date().getFullYear() - 16,
+                    new Date().getMonth(),
+                    new Date().getDate() - 1
+                  )
+                } // Chỉ cho phép chọn ngày <= ngày 16 năm trước
                 onConfirm={handleDateConfirm}
                 onCancel={hideDatePicker}
               />

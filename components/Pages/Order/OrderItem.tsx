@@ -62,7 +62,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
 
     try {
       // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
-      const response = await updateOrderDetailStatus(order.orderId, true);
+      const response = await updateOrderDetailStatus(order.orderId, true, 8);
       console.log("responseUpdatestatus", response);
 
       if (response.isSuccess) {
@@ -74,11 +74,11 @@ const OrderItem: React.FC<OrderItemProps> = ({
         // Hiển thị thông báo thành công và cập nhật giao diện nếu cần
       } else {
         console.error("Failed to update order status:", response.messages);
-        showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau!");
+        showErrorMessage(response.messages.join("\n"));
         // Hiển thị thông báo lỗi
       }
     } catch (error) {
-      showErrorMessage("Có gì đó không đúng, vui lòng thử lại sau");
+      showErrorMessage("Error updating order status: " + error);
 
       console.error("Error updating order status:", error);
       // Xử lý lỗi và hiển thị thông báo lỗi

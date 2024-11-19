@@ -29,6 +29,7 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import secureStorage from "@/redux/secureStore";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const SettingScreen: React.FC = () => {
   const router = useRouter();
@@ -40,16 +41,17 @@ const SettingScreen: React.FC = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const [isEnableNotification, setIsEnableNotification] = useState(false);
 
-  const fetchCurrentToken = () => async () => {
+  const fetchCurrentToken = async () => {
     try {
       const response = await getUserTokenByIp(token!);
-      console.log("response", response);
       if (response.isSuccess) {
         const tokenData = response.result as TokenData;
         console.log("tokenData", tokenData);
         if (tokenData.deviceToken) {
           await secureStorage.setItem("device_token", tokenData.deviceToken);
           setIsEnableNotification(true);
+        } else {
+          setIsEnableNotification(false);
         }
       } else {
         const errorMessage =
@@ -112,10 +114,10 @@ const SettingScreen: React.FC = () => {
   const handleChangeEnableNotification = async () => {
     try {
       setIsEnableNotification(!isEnableNotification);
-      let deviceToken = await secureStorage.getItem("device_token");
+      let deviceToken = await getToken();
       const response = await enableNotification(
         token!,
-        isEnableNotification ? undefined : deviceToken!
+        !isEnableNotification ? deviceToken : undefined
       );
       console.log(`enableNotification response`, response);
       if (response.isSuccess) {
@@ -137,10 +139,10 @@ const SettingScreen: React.FC = () => {
 
   // Handle logout
   const handleLogout = async () => {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn đăng xuất không?", [
+      { text: "Huỷ", style: "cancel" },
       {
-        text: "Log Out",
+        text: "Đăng Xuất  ",
         style: "destructive",
         onPress: async () => {
           let token = await secureStorage.getItem("token");
@@ -161,7 +163,7 @@ const SettingScreen: React.FC = () => {
             }
           }
           router.replace("/login");
-          showSuccessMessage("Logged out successfully.");
+          showSuccessMessage("Đăng xuất thành công!");
         },
       },
     ]);
@@ -269,7 +271,7 @@ const SettingScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tài Nguyên</Text>
+          {/* <Text style={styles.sectionTitle}>Tài Nguyên</Text>
 
           <TouchableOpacity
             onPress={() => {
@@ -309,7 +311,7 @@ const SettingScreen: React.FC = () => {
               name="chevron-right"
               size={20}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           {/* Logout Button */}
           <TouchableOpacity
             className="bg-white border-[#A1011A] border-2 py-3 rounded-lg my-4"
