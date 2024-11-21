@@ -22,12 +22,14 @@ import {
 } from "@/components/FlashMessageHelpers";
 import * as signalR from "@microsoft/signalr"; // Import SignalR
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
+import { fetchNotifications } from "@/redux/slices/notificationSlice";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const HomeScreen = () => {
   const router = useRouter(); // Sử dụng useRouter để điều hướng
   const dispatch = useDispatch<AppDispatch>();
+  const hasFetchedRef = useRef(false);
 
   const ordersState = useSelector((state: RootState) => state.orders);
   const profile = useSelector((state: RootState) => state.auth.account);
@@ -51,6 +53,9 @@ const HomeScreen = () => {
 
   // Fetch all orders
   const fetchAllOrders = useCallback(async () => {
+    if (hasFetchedRef.current) return; // Ngăn gọi lại không cần thiết
+    hasFetchedRef.current = true;
+
     try {
       if (!profile?.id) {
         throw new Error("Shipper ID không tồn tại.");
@@ -111,7 +116,7 @@ const HomeScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [profile?.id]);
+  }, []);
 
   // Hàm tạo chartData từ allOrders dựa trên 7 ngày gần nhất từ ngày hiện tại
   const generateChartData = useCallback((): {
@@ -177,6 +182,15 @@ const HomeScreen = () => {
           connection.on("LOAD_ASSIGNED_ORDER", () => {
             console.log("Received LOAD_ASSIGNED_ORDER event");
             fetchAllOrders();
+
+            // Gọi fetchNotifications trong Redux
+            if (profile?.id) {
+              dispatch(fetchNotifications(profile.id));
+            } else {
+              console.error(
+                "Cannot fetch notifications: Shipper ID is missing."
+              );
+            }
           });
         } catch (error) {
           console.error("Connection error:", error);
@@ -200,25 +214,26 @@ const HomeScreen = () => {
         }
       };
     }
-  }, [connection, fetchAllOrders]);
+  }, [connection, fetchAllOrders, dispatch, profile?.id]);
 
   // Fetch orders when profile.id is available
   useEffect(() => {
     if (profile?.id) {
       fetchAllOrders();
+      dispatch(fetchNotifications(profile.id));
     }
-  }, [profile?.id, fetchAllOrders]);
+  }, [profile?.id, fetchAllOrders, profile?.id, dispatch]);
 
   const chartData = generateChartData();
   console.log("chartData", chartData);
 
-  if (loading) {
-    return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#970C1A" />
-      </View>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <View className="flex-1 justify-center items-center bg-white">
+  //       <ActivityIndicator size="large" color="#970C1A" />
+  //     </View>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -244,6 +259,7 @@ const HomeScreen = () => {
   return (
     <View className="bg-white flex-1">
       <WelcomeHeader />
+      {loading && <ActivityIndicator size="large" color="#970C1A" />}
       <OrderSummary
         completedOrders={completedOrders}
         pendingOrders={pendingOrders}

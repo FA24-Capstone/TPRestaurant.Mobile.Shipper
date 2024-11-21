@@ -47,6 +47,7 @@ const OrderListDelivery: React.FC = () => {
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const accountId = useSelector((state: RootState) => state?.auth?.account?.id);
+  console.log("accountId", accountId);
 
   // useRef để theo dõi trạng thái đã tải của từng `status`
   const loadedStatusRef = useRef({
@@ -179,8 +180,10 @@ const OrderListDelivery: React.FC = () => {
       statusKey: keyof typeof loadedStatusRef.current,
       forceRefresh: boolean = false
     ) => {
-      // Kiểm tra nếu dữ liệu đã được tải và không cần tải lại
-      if (!forceRefresh && loadedStatusRef.current[statusKey]) return;
+      if (!forceRefresh && loadedStatusRef.current[statusKey]) {
+        console.log(`Status ${statusKey} already loaded, skipping fetch`);
+        return; // Bỏ qua nếu đã load và không ép buộc
+      }
 
       if (accountId) {
         const statuses: { [key: string]: number } = {
@@ -198,15 +201,27 @@ const OrderListDelivery: React.FC = () => {
         };
 
         // Dispatch async thunk to fetch orders
-        dispatch(fetchOrdersByStatus(params)).then((action) => {
+        try {
+          // Dispatch async thunk để fetch orders
+          const action = await dispatch(fetchOrdersByStatus(params));
+
           if (fetchOrdersByStatus.fulfilled.match(action)) {
+            console.log(`Fetched ${statusKey} successfully`);
+            // Đánh dấu trạng thái đã được tải
             loadedStatusRef.current[statusKey] = true;
-          } else {
-            showErrorMessage(action.payload || "Failed to fetch orders.");
+          } else if (fetchOrdersByStatus.rejected.match(action)) {
+            // Hiển thị lỗi từ payload hoặc lỗi mặc định
+            const errorMessage =
+              action.payload || "Failed to fetch orders. Please try again.";
+            showErrorMessage(errorMessage);
           }
-        });
-      } else {
-        showErrorMessage("Không tìm thấy tài khoản người dùng.");
+        } catch (error: any) {
+          console.error("Error fetching orders:", error);
+          // Hiển thị lỗi hệ thống không mong muốn
+          showErrorMessage(
+            error.message || "An unexpected error occurred. Please try again."
+          );
+        }
       }
     },
     [accountId, dispatch]
@@ -259,7 +274,7 @@ const OrderListDelivery: React.FC = () => {
     Object.keys(loadedStatusRef.current).forEach((key) => {
       fetchOrders(key as keyof typeof loadedStatusRef.current, true);
     });
-  }, [fetchOrders]); // Đảm bảo fetchOrders được bao gồm trong dependency array nếu cần
+  }, [fetchOrders]); // Bao gồm fetchOrders trong dependencies
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders((prevSelectedOrders) => {
@@ -301,6 +316,24 @@ const OrderListDelivery: React.FC = () => {
         navigation.navigate("OptimizeDelivery", {
           selectedOrders: allPendingOrders,
         });
+        setSelectedOrders([]);
+
+        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
+        if (accountId) {
+          statuses.forEach((status) => {
+            dispatch(
+              fetchOrdersByStatus({
+                shipperId: accountId, // Giả sử API trả về shipperId
+                pageNumber: 1,
+                pageSize: 10,
+                status,
+              })
+            );
+          });
+        } else {
+          showErrorMessage("Account ID is required.");
+        }
       } else {
         const failedOrders = responses
           .map((response, index) => ({
@@ -548,31 +581,33 @@ const OrderListDelivery: React.FC = () => {
                           </Text>
 
                           {/* Badge for displaying the count */}
-                          {orderCount > 0 && (
-                            <View
-                              style={{
-                                position: "absolute",
-                                top: -10,
-                                right: -5,
-                                minWidth: 23,
-                                height: 23,
-                                borderRadius: 10,
-                                backgroundColor: "#EDAA16",
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text
+                          {(route.key === "pending" ||
+                            route.key === "delivering") &&
+                            orderCount > 0 && (
+                              <View
                                 style={{
-                                  color: "white",
-                                  fontSize: 16,
-                                  fontWeight: "bold",
+                                  position: "absolute",
+                                  top: -10,
+                                  right: -5,
+                                  minWidth: 23,
+                                  height: 23,
+                                  borderRadius: 10,
+                                  backgroundColor: "#EDAA16",
+                                  justifyContent: "center",
+                                  alignItems: "center",
                                 }}
                               >
-                                {orderCount}
-                              </Text>
-                            </View>
-                          )}
+                                <Text
+                                  style={{
+                                    color: "white",
+                                    fontSize: 16,
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {orderCount}
+                                </Text>
+                              </View>
+                            )}
                         </TouchableOpacity>
                       </View>
                     );

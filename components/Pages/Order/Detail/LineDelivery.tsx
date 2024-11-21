@@ -124,18 +124,18 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
           </View>
         )}
 
-        <View className="flex-row mt-2 items-center  my-3">
-          <Text className=" my-1 text-red-500 font-bold text-lg">
+        <View className="flex-row mt-2 items-center w-full mx-2  my-3">
+          <Text className=" my-1 text-red-500 w-[20%] font-bold text-lg">
             {orderData.totalDuration || "0 phút"}
           </Text>
-          <View className="ml-4">
+          <View className="ml-1 w-[5%]">
             <Image
               source={require("../../../../assets/icon/lineplace.png")}
               style={{ width: 12, height: 109, borderRadius: 8 }}
             />
           </View>
 
-          <View className="ml-4 w-[80%]">
+          <View className="ml-4 w-[70%]">
             <Text className=" text-gray-400 font-semibold">
               Từ (Nhà hàng Thiên Phú)
             </Text>
