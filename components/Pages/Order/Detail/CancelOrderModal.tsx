@@ -1,3 +1,4 @@
+import { showErrorMessage } from "@/components/FlashMessageHelpers";
 import React, { useState } from "react";
 import {
   Modal,
@@ -33,14 +34,14 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
   const handleSubmit = () => {
     if (selectedReason === "Khác") {
       if (otherReason.trim() === "") {
-        alert("Vui lòng nhập lý do của bạn.");
+        showErrorMessage("Vui lòng nhập lý do của bạn.");
         return;
       }
       onSubmit(otherReason);
     } else if (selectedReason) {
       onSubmit(selectedReason);
     } else {
-      alert("Vui lòng chọn lý do hủy đơn.");
+      showErrorMessage("Vui lòng chọn lý do hủy đơn.");
     }
   };
 

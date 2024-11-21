@@ -32,22 +32,24 @@ const CustomerInfo: React.FC<CustomerInfoProps> = ({ customerData }) => {
   );
 
   return (
-    <View className="flex-row items-center justify-between mb-4 p-4 bg-gray-100 rounded-lg">
-      <View className="flex-row items-center">
-        <Avatar.Text
-          size={60}
-          label={`${customerData?.account?.firstName?.slice(0, 1) || ""}${
-            customerData?.account?.lastName?.slice(0, 1) || ""
-          }`} // Sử dụng ký tự đầu của tên và họ
-        />
-        <View className="ml-4">
+    <View className="flex-row items-center w-full justify-between mb-4 p-4 bg-gray-100 rounded-lg">
+      <View className="flex-row w-[70%] items-center">
+        <View className="w-[20%]">
+          <Avatar.Text
+            size={60}
+            label={`${customerData?.account?.firstName?.slice(0, 1) || ""}${
+              customerData?.account?.lastName?.slice(0, 1) || ""
+            }`} // Sử dụng ký tự đầu của tên và họ
+          />
+        </View>
+        <View className="ml-4 w-[80%]">
           <Text className="text-xl font-bold">
             {customerData?.account?.lastName} {customerData?.account?.firstName}
           </Text>
           <Text className="text-gray-500 text-base">Khách quen</Text>
         </View>
       </View>
-      <View>
+      <View className=" w-[30%]">
         <Text className="text-[#A1011A] font-semibold text-center text-lg mb-2">
           {customerData?.totalDistance || "0km"}
         </Text>

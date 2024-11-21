@@ -28,6 +28,9 @@ interface RouteParams {
 }
 
 const OptimizeDelivery: React.FC = () => {
+  const cachedDeliveriesRef = useRef<DeliveryGroup[] | null>(null);
+  const selectedOrdersRef = useRef<string[] | null>(null); // Lưu cache danh sách đơn hàng
+
   const navigation = useNavigation();
   const route = useRoute();
   const { selectedOrders } = route.params as RouteParams;
@@ -38,8 +41,6 @@ const OptimizeDelivery: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false); // State for API cal
   // useRef to store the previously fetched data
-  const cachedDeliveriesRef = useRef<DeliveryGroup[] | null>(null);
-  const selectedOrdersRef = useRef<string[] | null>(null);
   // State to determine whether there are any orders with status 7
   const [hasStatus7, setHasStatus7] = useState<boolean>(false);
 
@@ -97,7 +98,6 @@ const OptimizeDelivery: React.FC = () => {
             "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
 
           const mappedDeliveries = response.result.flatMap((item) => {
-            const pointLetter = String.fromCharCode(65 + (item.index - 1));
             return item.orders.map((order) => {
               const delivery = {
                 id: order.orderId,
@@ -176,11 +176,15 @@ const OptimizeDelivery: React.FC = () => {
     [selectedOrders]
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchOptimalPath(true); // Force refresh when the screen is focused
-    }, [fetchOptimalPath])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     fetchOptimalPath(true); // Force refresh when the screen is focused
+  //   }, [fetchOptimalPath])
+  // );
+
+  useEffect(() => {
+    fetchOptimalPath(true); // Gọi API
+  }, [fetchOptimalPath]);
 
   // useEffect để refetch khi isDelivering thay đổi thành true
   useEffect(() => {
@@ -267,7 +271,6 @@ const OptimizeDelivery: React.FC = () => {
               />
             ))}
           </ScrollView>
-          {/* Bottom Fixed "Bắt đầu giao" Button */}
           {/* Bottom Fixed "Bắt đầu giao" Button */}
           {hasStatus7 && (
             <View className="absolute bottom-0 left-0 right-0 p-4 bg-white">

@@ -68,32 +68,35 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
   };
 
   const handleDriverConfirm = async (orderId: string) => {
-    console.log("Driver confirm for order", orderId);
-    try {
-      const response = await updateOrderDetailStatus(orderId, true, 8);
+    if (orderId) {
+      console.log("Driver confirm for order", orderId);
+      try {
+        const response = await updateOrderDetailStatus(orderId, true, 8);
 
-      if (response.isSuccess) {
-        if (setIsDelivering) setIsDelivering(true);
-        showSuccessMessage("Đơn hàng này bắt đầu được giao!");
-      } else {
-        showErrorMessage(
-          `Lỗi với đơn hàng ${orderId}: ${
-            response.messages || "Không xác định"
-          }.`
-        );
+        if (response.isSuccess) {
+          if (setIsDelivering) setIsDelivering(true);
+          showSuccessMessage("Đơn hàng này bắt đầu được giao!");
+        } else {
+          showErrorMessage(
+            `Lỗi với đơn hàng ${orderId}: ${
+              response.messages || "Không xác định"
+            }.`
+          );
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          showErrorMessage(
+            error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
+          );
+        } else {
+          showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
+        }
+        console.error("Error updating order status:", error);
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        showErrorMessage(
-          error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
-        );
-      } else {
-        showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
-      }
-      console.error("Error updating order status:", error);
+    } else {
+      showErrorMessage("Không tìm thấy order ID");
     }
   };
-  // console.log("delivery.startDeliveringTime", delivery.startDeliveringTime);
 
   // Determine if the group has multiple orders
   const hasMultipleOrders = delivery.orders.length > 1;
@@ -264,9 +267,9 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         </View>
       </View>
       {/* If multiple orders, show dropdown icon */}
-      {hasMultipleOrders ? (
+      {hasMultipleOrders && delivery.orders[0].id ? (
         <>
-          {delivery.status === 7 ? (
+          {/* {delivery.status === 7 ? (
             <TouchableOpacity
               className={`w-full bg-[#A1011A] py-2 rounded-lg mt-2`}
               onPress={
@@ -280,16 +283,16 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                 Giao Ngay
               </Text>
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              className={` mt-2 w-full bg-blue-400 py-2 rounded-lg`}
-              onPress={() => handleMapPress(delivery.orders[0].id)}
-            >
-              <Text className="text-white text-center font-semibold text-base">
-                Xem bản đồ
-              </Text>
-            </TouchableOpacity>
-          )}
+          ) : ( */}
+          <TouchableOpacity
+            className={` mt-2 w-full bg-blue-400 py-2 rounded-lg`}
+            onPress={() => handleMapPress(delivery.orders[0].id)}
+          >
+            <Text className="text-white text-center font-semibold text-base">
+              Xem bản đồ
+            </Text>
+          </TouchableOpacity>
+          {/* )} */}
 
           {/* Toggle between chevron-down and chevron-up based on `isDropdownOpen` */}
           <TouchableOpacity onPress={toggleDropdown} className="mt-3 mx-auto">
@@ -302,32 +305,34 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         </>
       ) : (
         <View className="flex-row justify-between">
-          <TouchableOpacity
-            className={` mt-2 w-[48%] ${
-              delivery.status === 9
-                ? "bg-[#086634]/5"
-                : delivery.status === 8
-                ? "bg-[#084466]/5"
-                : delivery.status === 7
-                ? "bg-[#341F00]/5"
-                : "bg-[#4D0000]/5"
-            } py-2 rounded-lg`}
-            onPress={() =>
-              router.push(`/order-detail?id=${delivery.orders[0].id}`)
-            }
-          >
-            <Text
-              className="text-gray-600 text-center font-semibold text-base"
+          {delivery.orders[0].id && (
+            <TouchableOpacity
+              className={` mt-2 w-[48%] ${
+                delivery.status === 9
+                  ? "bg-[#086634]/5"
+                  : delivery.status === 8
+                  ? "bg-[#084466]/5"
+                  : delivery.status === 7
+                  ? "bg-[#341F00]/5"
+                  : "bg-[#4D0000]/5"
+              } py-2 rounded-lg`}
               onPress={() =>
-                navigation.navigate("OrderDetail", {
-                  orderId: delivery.orders[0].id,
-                })
+                router.push(`/order-detail?id=${delivery.orders[0].id}`)
               }
             >
-              Xem
-            </Text>
-          </TouchableOpacity>
-          {delivery.status === 7 ? (
+              <Text
+                className="text-gray-600 text-center font-semibold text-base"
+                onPress={() =>
+                  navigation.navigate("OrderDetail", {
+                    orderId: delivery.orders[0].id,
+                  })
+                }
+              >
+                Xem
+              </Text>
+            </TouchableOpacity>
+          )}
+          {delivery.status === 7 && delivery.orders[0].id ? (
             <TouchableOpacity
               className={` mt-2 w-[48%] bg-[#A1011A] py-2 rounded-lg`}
               onPress={() => handleDriverConfirm(delivery.orders[0].id)}

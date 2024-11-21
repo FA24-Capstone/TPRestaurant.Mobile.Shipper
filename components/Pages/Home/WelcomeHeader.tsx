@@ -5,10 +5,25 @@ import { Feather } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "expo-router";
+import { createSelector } from "@reduxjs/toolkit";
 
 const WelcomeHeader: React.FC = () => {
   const router = useRouter();
   const profile = useSelector((state: RootState) => state.auth.account);
+
+  const selectUnreadNotifications = createSelector(
+    (state: RootState) => state.notifications.notifications,
+    (notifications) =>
+      notifications.filter((notification) => !notification.isRead)
+  );
+
+  const selectUnreadNotificationCount = createSelector(
+    selectUnreadNotifications,
+    (unreadNotifications) => unreadNotifications.length
+  );
+
+  // Lấy số lượng thông báo chưa đọc
+  const unreadNotificationCount = useSelector(selectUnreadNotificationCount);
 
   // Set avatar URL
   const avatarUri = profile?.avatar
@@ -18,7 +33,7 @@ const WelcomeHeader: React.FC = () => {
   // console.log("profile", profile);
 
   return (
-    <View className="flex-row mx-2 justify-between items-center p-4">
+    <View className="flex-row mx-2 justify-between items-center mt-4 p-4">
       <View>
         <Text className="text-lg">Xin chào,</Text>
         <Text className="font-bold text-xl">
@@ -28,7 +43,12 @@ const WelcomeHeader: React.FC = () => {
       </View>
       <View className="flex-row items-center">
         <TouchableOpacity onPress={() => router.push("/notifications")}>
-          <IconButton icon={() => <Feather name="bell" size={24} />} />
+          <IconButton icon={() => <Feather name="bell" size={32} />} />
+          {unreadNotificationCount > 0 && (
+            <Text className="absolute -top-1 left-0 py-1 px-2 bg-red-800 text-white font-bold rounded-full">
+              {unreadNotificationCount}
+            </Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push("/my-profile")}>
           <Avatar.Image

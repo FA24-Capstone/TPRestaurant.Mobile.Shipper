@@ -6,8 +6,13 @@ import OrderDishes from "@/components/Pages/Order/Detail/OrderItems";
 import OrderSummary from "@/components/Pages/Order/Detail/OrderSummary";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, Text, View, Image, ActivityIndicator } from "react-native";
 import { RootStackParamList } from "../types/types";
 import {
@@ -52,7 +57,7 @@ const OrderDetail = () => {
     };
   }, [navigation]);
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -78,7 +83,7 @@ const OrderDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
     if (orderId) {
