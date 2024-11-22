@@ -22,6 +22,7 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import DeliveryCard from "@/components/Pages/Delivery/DeliveryCard";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface RouteParams {
   selectedOrders: string[];
@@ -42,6 +43,7 @@ const OptimizeDelivery: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false); // State for API cal
   // useRef to store the previously fetched data
   // State to determine whether there are any orders with status 7
+  const [shouldReload, setShouldReload] = useState(false);
   const [hasStatus7, setHasStatus7] = useState<boolean>(false);
 
   useEffect(() => {
@@ -94,10 +96,10 @@ const OptimizeDelivery: React.FC = () => {
 
         if (response.isSuccess) {
           // Gắn tạm địa chỉ trước đó để bắt đầu xử lý tuyến đường
-          let previousAddress =
-            "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
 
           const mappedDeliveries = response.result.flatMap((item) => {
+            let previousAddress =
+              "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
             return item.orders.map((order) => {
               const delivery = {
                 id: order.orderId,
@@ -176,29 +178,39 @@ const OptimizeDelivery: React.FC = () => {
     [selectedOrders]
   );
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     fetchOptimalPath(true); // Force refresh when the screen is focused
-  //   }, [fetchOptimalPath])
-  // );
-
   useEffect(() => {
-    fetchOptimalPath(true); // Gọi API
-  }, [fetchOptimalPath]);
+    if (
+      !selectedOrdersRef.current ||
+      selectedOrdersRef.current.length !== selectedOrders.length ||
+      !selectedOrdersRef.current.every(
+        (order, index) => order === selectedOrders[index]
+      )
+    ) {
+      console.log("Refetching optimal path...");
+
+      fetchOptimalPath(true); // Chỉ gọi lại khi danh sách đơn hàng thay đổi
+    }
+  }, [selectedOrders]);
+
+  const handleReload = () => {
+    fetchOptimalPath(true); // Gọi fetchOptimalPath với tham số force = true
+  };
+
+  // Dùng useFocusEffect để load lại mỗi khi màn hình được focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchOptimalPath(); // Gọi lại API nếu cần reload
+    }, [fetchOptimalPath])
+  );
 
   // useEffect để refetch khi isDelivering thay đổi thành true
   useEffect(() => {
     if (isDelivering) {
       fetchOptimalPath(true).then(() => {
-        // Reset isDelivering
-        setIsDelivering(false);
+        setIsDelivering(false); // Reset lại trạng thái
       });
     }
   }, [isDelivering, fetchOptimalPath]);
-
-  // console.log("isDeliveringNew", isDelivering);
-
-  // console.log("deliveriesNew", JSON.stringify(deliveries));
 
   // Function to handle "Bắt đầu giao" button click
   const handleStartDelivery = async () => {
@@ -255,7 +267,17 @@ const OptimizeDelivery: React.FC = () => {
           <Text className="mt-2 text-gray-700">Đang tối ưu hoá ...</Text>
         </View>
       ) : (
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-white pb-20">
+          <View className="flex-row justify-end items-center mx-4 mt-3">
+            <TouchableOpacity
+              onPress={handleReload}
+              className="flex-row items-center"
+            >
+              <MaterialCommunityIcons name="reload" size={24} color="#A1011A" />
+              <Text className="text-[#A1011A] ml-2 font-bold">Tải lại</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Delivery Status */}
           <View className="flex-row justify-center my-2">
             <DeliveryStatus deliveries={deliveries} />

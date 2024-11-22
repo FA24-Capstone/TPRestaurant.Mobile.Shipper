@@ -85,11 +85,12 @@ const OrderDetail = () => {
     }
   }, [orderId]);
 
-  useEffect(() => {
-    if (orderId) {
-      fetchOrderDetails();
-    }
-  }, [orderId]);
+  // Chỉ cần useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrderDetails(); // Gọi lại API khi quay lại màn hình
+    }, [fetchOrderDetails])
+  );
 
   // Hàm để làm mới dữ liệu đơn hàng
   const refetchOrderDetails = () => {

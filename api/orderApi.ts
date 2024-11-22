@@ -32,10 +32,13 @@ export const getOrderMap = async (
 export const getOptimalPath = async (
   orderIds: GetOptimalPathRequest
 ): Promise<AppActionResult<OptimalPathResult[]>> => {
+  console.log("getOptimalPath orderIds:", orderIds);
+
   const response = await apiClient.post<AppActionResult<OptimalPathResult[]>>(
     `/map/get-optimal-path`,
     orderIds
   );
+  console.log("Response getOptimalPath orderIds:", response.data);
 
   return response.data;
 };

@@ -64,6 +64,19 @@ const OrderListDelivery: React.FC = () => {
     { key: "cancelled", title: "Đã hủy" },
   ]);
 
+  const [pageNumbers, setPageNumbers] = useState({
+    pending: 1,
+    delivering: 1,
+    delivered: 1,
+    cancelled: 1,
+  });
+  const [hasMore, setHasMore] = useState({
+    pending: true,
+    delivering: true,
+    delivered: true,
+    cancelled: true,
+  });
+
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [index, setIndex] = useState(0);
   const isPendingTab = routes[index].key === "pending";
@@ -196,7 +209,7 @@ const OrderListDelivery: React.FC = () => {
         const params: GetAllOrdersByStatusParams = {
           shipperId: accountId,
           pageNumber: 1,
-          pageSize: 10,
+          pageSize: 1000,
           status: statuses[statusKey],
         };
 
@@ -265,6 +278,17 @@ const OrderListDelivery: React.FC = () => {
     }, [index])
   );
 
+  useEffect(() => {
+    if (isPendingTab) {
+      const allPendingOrderIds = orders.ordersByStatus.pending.map(
+        (order) => order.orderId
+      );
+      setSelectedOrders(allPendingOrderIds);
+    } else {
+      setSelectedOrders([]); // Làm trống khi không ở tab "pending"
+    }
+  }, [isPendingTab, orders.ordersByStatus.pending]);
+
   // Refetch tất cả trạng thái khi nhấn nút "Tải lại"
   const handleReload = useCallback(() => {
     Object.keys(loadedStatusRef.current).forEach((key) => {
@@ -326,7 +350,7 @@ const OrderListDelivery: React.FC = () => {
               fetchOrdersByStatus({
                 shipperId: accountId, // Giả sử API trả về shipperId
                 pageNumber: 1,
-                pageSize: 10,
+                pageSize: 1000,
                 status,
               })
             );
