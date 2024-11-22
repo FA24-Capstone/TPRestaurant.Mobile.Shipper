@@ -19,7 +19,13 @@ const apiClient = axios.create({
 
 // Hàm để lấy token từ SecureStore
 const getToken = async () => {
-  return await SecureStore.getItemAsync("token");
+  const token = await SecureStore.getItemAsync("token");
+  if (!token) {
+    console.warn("Token không tồn tại!");
+  } else {
+    console.log("Token:", token); // Log token khi lấy lần đầu
+  }
+  return token;
 };
 
 // Interceptor để thêm token vào headers

@@ -85,42 +85,40 @@ const OrderActions: React.FC<OrderActionsProps> = ({
         showErrorMessage("Vui lòng nhập lý do hủy đơn.");
         return;
       }
-      if (!accountId) {
-        showErrorMessage("Không tìm thấy tài khoản người dùng.");
-        return;
-      }
-      // Gọi API hủy đơn với lý do
-      const response = await cancelDeliveringOrder(
-        orderData.orderId,
-        reason,
-        accountId, // Thay bằng giá trị thích hợp
-        false // isCancelledByAdmin có thể được điều chỉnh theo ngữ cảnh
-      );
+      if (accountId) {
+        // Gọi API hủy đơn với lý do
+        const response = await cancelDeliveringOrder(
+          orderData.orderId,
+          reason,
+          accountId, // Thay bằng giá trị thích hợp
+          false // isCancelledByAdmin có thể được điều chỉnh theo ngữ cảnh
+        );
 
-      // Gọi hàm làm mới dữ liệu khi hủy đơn thành công
-      if (response.isSuccess) {
-        // Xử lý phản hồi từ API nếu cần thiết
-        console.log("Order cancellation response:", response);
+        // Gọi hàm làm mới dữ liệu khi hủy đơn thành công
+        if (response.isSuccess) {
+          // Xử lý phản hồi từ API nếu cần thiết
+          console.log("Order cancellation response:", response);
 
-        // Đóng modal sau khi xử lý thành công
-        setModalVisible(false);
-        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
-        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
-        if (accountId) {
-          statuses.forEach((status) => {
-            dispatch(
-              fetchOrdersByStatus({
-                shipperId: accountId, // Giả sử API trả về shipperId
-                pageNumber: 1,
-                pageSize: 10,
-                status,
-              })
-            );
-          });
-        } else {
-          showErrorMessage("Account ID is required.");
+          // Đóng modal sau khi xử lý thành công
+          setModalVisible(false);
+          // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+          const statuses = [7, 8, 10]; // Các status codes bạn muốn refetch
+          if (accountId) {
+            statuses.forEach((status) => {
+              dispatch(
+                fetchOrdersByStatus({
+                  shipperId: accountId, // Giả sử API trả về shipperId
+                  pageNumber: 1,
+                  pageSize: 1000,
+                  status,
+                })
+              );
+            });
+          } else {
+            showErrorMessage("Account ID is required.");
+          }
+          onRefetch();
         }
-        onRefetch();
       }
     } catch (error) {
       // Đã có thông báo lỗi hiển thị thông qua showErrorMessage trong API function

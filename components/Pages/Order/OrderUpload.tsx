@@ -130,26 +130,46 @@ const OrderUpload: React.FC = () => {
         console.log("Image uploaded successfully:", response);
 
         showSuccessMessage("Đơn hàng này đã được giao!");
+        // navigation.replace("OrderDetail", { orderId });
+        navigation.goBack();
 
         // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
-        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
         if (accountId) {
-          statuses.forEach((status) => {
+          const statuses = [8, 9];
+          const fetchPromises = statuses.map((status) =>
             dispatch(
               fetchOrdersByStatus({
-                shipperId: accountId, // Giả sử API trả về shipperId
+                shipperId: accountId,
                 pageNumber: 1,
-                pageSize: 10,
+                pageSize: 1000,
                 status,
               })
-            );
-          });
+            )
+          );
+
+          // Chờ tất cả các dispatch hoàn thành
+          const results = await Promise.allSettled(fetchPromises);
+
+          // Xử lý lỗi từ các fetchOrdersByStatus
+          const failedFetches = results.filter(
+            (result) => result.status === "rejected"
+          );
+
+          if (failedFetches.length > 0) {
+            failedFetches.forEach((failure) => {
+              console.error("Fetch status failed:", failure);
+              // Hiển thị thông báo lỗi từ từng dispatch thất bại
+              showErrorMessage(
+                failure.reason ||
+                  "A system error occurred while updating statuses."
+              );
+            });
+          }
         } else {
           showErrorMessage("Account ID is required.");
         }
 
         // Finally, navigate to OrderDetail
-        navigation.replace("OrderDetail", { orderId });
       } else {
         const errorMessage =
           response.messages[0] || "Failed to upload the image.";
@@ -157,7 +177,9 @@ const OrderUpload: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      showErrorMessage("Failed to upload the image. Please try again.");
+      showErrorMessage(
+        error.message || "Failed to upload the image. Please try again."
+      );
     } finally {
       setUploading(false);
     }

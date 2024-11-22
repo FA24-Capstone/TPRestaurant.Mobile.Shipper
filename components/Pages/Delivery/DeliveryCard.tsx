@@ -32,6 +32,7 @@ interface DeliveryCardProps {
 // Define the types for navigation routes
 type RootStackParamList = {
   OrderDetail: { orderId: string };
+  OrderUploadList: { orderIds: string[] };
 };
 
 const DeliveryCard: React.FC<DeliveryCardProps> = ({
@@ -68,32 +69,35 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
   };
 
   const handleDriverConfirm = async (orderId: string) => {
-    console.log("Driver confirm for order", orderId);
-    try {
-      const response = await updateOrderDetailStatus(orderId, true, 8);
+    if (orderId) {
+      console.log("Driver confirm for order", orderId);
+      try {
+        const response = await updateOrderDetailStatus(orderId, true, 8);
 
-      if (response.isSuccess) {
-        if (setIsDelivering) setIsDelivering(true);
-        showSuccessMessage("Đơn hàng này bắt đầu được giao!");
-      } else {
-        showErrorMessage(
-          `Lỗi với đơn hàng ${orderId}: ${
-            response.messages || "Không xác định"
-          }.`
-        );
+        if (response.isSuccess) {
+          if (setIsDelivering) setIsDelivering(true);
+          showSuccessMessage("Đơn hàng này bắt đầu được giao!");
+        } else {
+          showErrorMessage(
+            `Lỗi với đơn hàng ${orderId}: ${
+              response.messages || "Không xác định"
+            }.`
+          );
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          showErrorMessage(
+            error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
+          );
+        } else {
+          showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
+        }
+        console.error("Error updating order status:", error);
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        showErrorMessage(
-          error.message || "Đã có lỗi xảy ra khi cập nhật trạng thái."
-        );
-      } else {
-        showErrorMessage("Đã có lỗi xảy ra khi cập nhật trạng thái.");
-      }
-      console.error("Error updating order status:", error);
+    } else {
+      showErrorMessage("Không tìm thấy order ID");
     }
   };
-  // console.log("delivery.startDeliveringTime", delivery.startDeliveringTime);
 
   // Determine if the group has multiple orders
   const hasMultipleOrders = delivery.orders.length > 1;
@@ -122,6 +126,15 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
     }
   };
 
+  const handleDriverConfirmAll = (orderIds: string[]) => {
+    if (orderIds.length === 0) {
+      showErrorMessage("Không tìm thấy order ID");
+      return;
+    }
+    console.log("Driver confirm for orders", orderIds);
+    navigation.navigate("OrderUploadList", { orderIds: orderIds });
+  };
+
   return (
     <View
       className={`mx-4 mb-4 p-4 rounded-lg shadow ${
@@ -136,7 +149,9 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
     >
       <View className="flex-row justify-between">
         <Text
-          className="text-lg font-bold uppercase"
+          className={`text-lg font-bold ${
+            delivery.status === 9 ? "w-[55%]" : "w-[75%]"
+          } uppercase`}
           style={{ color: delivery.color }}
         >
           {delivery.point} -{" "}
@@ -147,7 +162,9 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
             : `#${delivery.orders[0].id.slice(0, 8)}`}
         </Text>
         <Text
-          className={`text-base font-bold uppercase`}
+          className={`text-base  ${
+            delivery.status === 9 ? "w-[45%]" : "w-[25%]"
+          } text-right font-bold uppercase`}
           style={{ color: delivery.color }}
         >
           {delivery.status === 9
@@ -180,22 +197,18 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
           {delivery.status === 7 && startDeliveringTime ? (
             <Text className="text-gray-600 italic ">
               <Text className="font-semibold italic">
-                {moment.utc(startDeliveringTime).local().format("hh:mm A, ")}
+                {moment(startDeliveringTime).format("hh:mm A, ")}
               </Text>
-              {moment.utc(startDeliveringTime).local().format("DD/MM/YYYY")}{" "}
+              {moment(startDeliveringTime).format("DD/MM/YYYY")}{" "}
             </Text>
           ) : (
             <View>
               {delivery.startDeliveringTime ? (
                 <Text className="text-gray-600 italic">
                   <Text className="font-semibold italic">
-                    {moment
-                      .utc(delivery.startDeliveringTime)
-                      .format("hh:mm A, ")}
+                    {moment(delivery.startDeliveringTime).format("hh:mm A, ")}
                   </Text>
-                  {moment
-                    .utc(delivery.startDeliveringTime)
-                    .format("DD/MM/YYYY")}{" "}
+                  {moment(delivery.startDeliveringTime).format("DD/MM/YYYY")}{" "}
                 </Text>
               ) : (
                 <Text className="text-gray-500 font-semibold italic">
@@ -223,13 +236,11 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
           ) : delivery.status === 8 ? (
             <Text className="text-gray-600  mt-6 italic">
               <Text className="font-semibold italic">
-                {moment
-                  .utc(delivery.startDeliveringTime)
+                {moment(delivery.startDeliveringTime)
                   .add(durationNumber, "minutes")
                   .format("hh:mm A, ")}
               </Text>
-              {moment
-                .utc(delivery.startDeliveringTime)
+              {moment(delivery.startDeliveringTime)
                 .add(durationNumber, "minutes")
                 .format("DD/MM/YYYY")}{" "}
             </Text>
@@ -238,12 +249,11 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
               {delivery.deliveredTime ? (
                 <Text className="text-gray-600 italic mt-6">
                   <Text className="font-semibold text-gray-800">
-                    {moment
-                      .utc(delivery.deliveredTime)
+                    {moment(delivery.deliveredTime)
                       .add(durationNumber, "minutes")
                       .format("hh:mm A, ")}
                   </Text>
-                  {moment.utc(delivery.deliveredTime).format("DD/MM/YYYY")}{" "}
+                  {moment(delivery.deliveredTime).format("DD/MM/YYYY")}{" "}
                 </Text>
               ) : (
                 <Text className="text-gray-500 font-semibold italic mt-6">
@@ -264,32 +274,35 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         </View>
       </View>
       {/* If multiple orders, show dropdown icon */}
-      {hasMultipleOrders ? (
+      {hasMultipleOrders && delivery.orders[0].id ? (
         <>
-          {delivery.status === 7 ? (
+          <View className="flex-row justify-between">
+            {delivery.status === 8 && delivery.orders[0].id && (
+              <TouchableOpacity
+                className={` mt-2 w-[45%] bg-[#A1011A] py-2 rounded-lg`}
+                onPress={() =>
+                  handleDriverConfirmAll(
+                    delivery.orders.map((order) => order.id)
+                  )
+                }
+              >
+                <Text className="text-white text-center font-semibold text-base">
+                  Đã giao
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
-              className={`w-full bg-[#A1011A] py-2 rounded-lg mt-2`}
-              onPress={
-                () =>
-                  delivery.orders.forEach((order) =>
-                    handleDriverConfirm(order.id)
-                  ) // Loop through all orders and confirm them
-              }
-            >
-              <Text className="text-white text-center uppercase font-semibold text-base">
-                Giao Ngay
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              className={` mt-2 w-full bg-blue-400 py-2 rounded-lg`}
+              className={`${
+                delivery.status === 8 ? "w-[45%]" : "w-full"
+              } mt-2  bg-blue-400 py-2 rounded-lg`}
               onPress={() => handleMapPress(delivery.orders[0].id)}
             >
               <Text className="text-white text-center font-semibold text-base">
                 Xem bản đồ
               </Text>
             </TouchableOpacity>
-          )}
+          </View>
 
           {/* Toggle between chevron-down and chevron-up based on `isDropdownOpen` */}
           <TouchableOpacity onPress={toggleDropdown} className="mt-3 mx-auto">
@@ -302,32 +315,34 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         </>
       ) : (
         <View className="flex-row justify-between">
-          <TouchableOpacity
-            className={` mt-2 w-[48%] ${
-              delivery.status === 9
-                ? "bg-[#086634]/5"
-                : delivery.status === 8
-                ? "bg-[#084466]/5"
-                : delivery.status === 7
-                ? "bg-[#341F00]/5"
-                : "bg-[#4D0000]/5"
-            } py-2 rounded-lg`}
-            onPress={() =>
-              router.push(`/order-detail?id=${delivery.orders[0].id}`)
-            }
-          >
-            <Text
-              className="text-gray-600 text-center font-semibold text-base"
+          {delivery.orders[0].id && (
+            <TouchableOpacity
+              className={` mt-2 w-[48%] ${
+                delivery.status === 9
+                  ? "bg-[#086634]/5"
+                  : delivery.status === 8
+                  ? "bg-[#084466]/5"
+                  : delivery.status === 7
+                  ? "bg-[#341F00]/5"
+                  : "bg-[#4D0000]/5"
+              } py-2 rounded-lg`}
               onPress={() =>
-                navigation.navigate("OrderDetail", {
-                  orderId: delivery.orders[0].id,
-                })
+                router.push(`/order-detail?id=${delivery.orders[0].id}`)
               }
             >
-              Xem
-            </Text>
-          </TouchableOpacity>
-          {delivery.status === 7 ? (
+              <Text
+                className="text-gray-600 text-center font-semibold text-base"
+                onPress={() =>
+                  navigation.navigate("OrderDetail", {
+                    orderId: delivery.orders[0].id,
+                  })
+                }
+              >
+                Xem
+              </Text>
+            </TouchableOpacity>
+          )}
+          {delivery.status === 7 && delivery.orders[0].id ? (
             <TouchableOpacity
               className={` mt-2 w-[48%] bg-[#A1011A] py-2 rounded-lg`}
               onPress={() => handleDriverConfirm(delivery.orders[0].id)}
@@ -357,8 +372,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
         delivery.orders.map((order) => (
           <View key={order.id} className="mb-2 mt-4">
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.assignedTime)
+              {moment(order.assignedTime)
                 .local()
                 .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
             </Text>

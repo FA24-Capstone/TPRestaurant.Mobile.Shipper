@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { OrderItemProps } from "@/app/types/order_type";
@@ -11,6 +11,7 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import moment from "moment-timezone";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Hàm chuyển đổi trạng thái sang tiếng Việt và trả về màu tương ứng
 const getStatusTextAndColor = (status: number) => {
@@ -42,6 +43,8 @@ const OrderItem: React.FC<OrderItemProps> = ({
   onViewDetail,
   setIsDelivering,
 }) => {
+  const [loading, setLoading] = useState(false);
+
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // console.log("OrderItemNE", JSON.stringify(order));
@@ -59,7 +62,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
 
   const handleDriverConfirm = async () => {
     console.log("Driver confirm");
-
+    setLoading(true);
     try {
       // Gọi API và truyền orderId và trạng thái isSuccessful là true (hoặc false)
       const response = await updateOrderDetailStatus(order.orderId, true, 8);
@@ -82,6 +85,8 @@ const OrderItem: React.FC<OrderItemProps> = ({
 
       console.error("Error updating order status:", error);
       // Xử lý lỗi và hiển thị thông báo lỗi
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,6 +110,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
   return (
     <View className=" mt-4 flex-row items-center">
       {/* Checkbox để chọn đơn */}
+      <LoadingOverlay visible={loading} />
 
       <View
         className={`bg-[#FAFAFA] p-3 rounded-lg shadow ${
@@ -114,31 +120,24 @@ const OrderItem: React.FC<OrderItemProps> = ({
         <View className="flex-1 ">
           {order.status.id === 7 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.assignedTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.assignedTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           ) : order.status.id === 8 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.startDeliveringTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.startDeliveringTime).format(
+                "hh:mm A, DD/MM/YYYY"
+              ) || "Không xác định"}
             </Text>
           ) : order.status.id === 9 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.deliveredTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.deliveredTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           ) : (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.assignedTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.assignedTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           )}
 

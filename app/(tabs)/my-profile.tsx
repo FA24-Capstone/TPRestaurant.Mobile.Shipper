@@ -137,7 +137,7 @@ const MyProfile = () => {
             Ngày sinh
           </Text>
           <Text className="text-lg text-gray-800 font-semibold flex-2">
-            {moment.utc(account?.dob).format("DD/MM/YYYY") ?? "Chưa cập nhật"}
+            {moment(account?.dob).format("DD/MM/YYYY") ?? "Chưa cập nhật"}
           </Text>
         </View>
         <View className="flex-row items-center  mb-6 ">

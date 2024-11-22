@@ -27,7 +27,11 @@ const DeliveryStatus: React.FC<DeliveryStatusProps> = ({ deliveries }) => {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false} // Hide the scroll indicator for a cleaner look
-      contentContainerStyle={{ alignItems: "center", margin: "auto" }} // Align items vertically in the center
+      contentContainerStyle={{
+        alignItems: "center",
+        paddingLeft: 16, // Add padding to prevent content from being cut off
+        paddingRight: 16, // Optional: Padding on the right for better spacing
+      }}
     >
       <View className="flex-row my-3 items-center ">
         {deliveries.map((delivery, index) => (
