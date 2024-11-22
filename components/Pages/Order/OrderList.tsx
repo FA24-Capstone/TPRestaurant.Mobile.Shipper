@@ -34,6 +34,9 @@ const OrderList: React.FC<OrderListProps> = ({
     <>
       {displayedOrders.length > 0 && (
         <ScrollView className="px-2 ">
+          <Text className="mx-2 font-semibold mt-2 text-lg text-gray-600">
+            Tổng đơn: {displayedOrders.length} đơn
+          </Text>
           {displayedOrders.map((order, index) => (
             <OrderItem
               key={order.orderId}

@@ -15,6 +15,7 @@ import MyProfile from "./my-profile";
 import { useRouter } from "expo-router";
 import UpdateProfile from "./update-profile";
 import NotificationsScreen from "./notifications";
+import OrderUploadList from "@/components/Pages/Order/OrderUploadList";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator(); // Stack for detailed screens
@@ -44,6 +45,14 @@ const OrderStack = () => {
       <Stack.Screen
         name="OrderUpload"
         component={OrderUpload}
+        options={{
+          header: () => <CustomHeaderDetail title="Chụp ảnh hoàn thành" />,
+        }}
+      />
+
+      <Stack.Screen
+        name="OrderUploadList"
+        component={OrderUploadList}
         options={{
           header: () => <CustomHeaderDetail title="Chụp ảnh hoàn thành" />,
         }}

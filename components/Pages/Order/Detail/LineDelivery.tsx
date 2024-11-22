@@ -73,10 +73,8 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
   return (
     <View className="mb-4">
       <Text className="text-gray-400 text-sm font-medium italic">
-        {moment
-          .utc(orderData.assignedTime)
-          .local()
-          .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+        {moment(orderData.assignedTime).format("hh:mm A, DD/MM/YYYY") ||
+          "Không xác định"}
       </Text>
       <View className="flex-row justify-between">
         <Text className="font-medium text-lg text-gray-700 mb-4">
@@ -101,20 +99,18 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
         {orderData.statusId === 7 && startDeliveringTime ? (
           <Text className="text-gray-600 ">
             <Text className="font-semibold text-gray-800">
-              {moment.utc(startDeliveringTime).local().format("hh:mm A, ")}
+              {moment(startDeliveringTime).format("hh:mm A, ")}
             </Text>
-            {moment.utc(startDeliveringTime).local().format("DD/MM/YYYY")}{" "}
+            {moment(startDeliveringTime).format("DD/MM/YYYY")}{" "}
           </Text>
         ) : (
           <View>
             {orderData.startDeliveringTime ? (
               <Text className="text-gray-600 ">
                 <Text className="font-semibold text-gray-800">
-                  {moment
-                    .utc(orderData.startDeliveringTime)
-                    .format("hh:mm A, ")}
+                  {moment(orderData.startDeliveringTime).format("hh:mm A, ")}
                 </Text>
-                {moment.utc(orderData.startDeliveringTime).format("DD/MM/YYYY")}{" "}
+                {moment(orderData.startDeliveringTime).format("DD/MM/YYYY")}{" "}
               </Text>
             ) : (
               <Text className="text-gray-500 font-semibold">
@@ -159,13 +155,11 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
         ) : orderData.statusId === 8 ? (
           <Text className="text-gray-600 ">
             <Text className="font-semibold text-gray-800">
-              {moment
-                .utc(orderData.startDeliveringTime)
+              {moment(orderData.startDeliveringTime)
                 .add(durationNumber, "minutes")
                 .format("hh:mm A, ")}
             </Text>
-            {moment
-              .utc(orderData.startDeliveringTime)
+            {moment(orderData.startDeliveringTime)
               .add(durationNumber, "minutes")
               .format("DD/MM/YYYY")}{" "}
           </Text>
@@ -174,12 +168,11 @@ const LineDelivery: React.FC<LineDeliveryProps> = ({ orderData }) => {
             {orderData.deliveredTime ? (
               <Text className="text-gray-600 ">
                 <Text className="font-semibold text-gray-800">
-                  {moment
-                    .utc(orderData.deliveredTime)
+                  {moment(orderData.deliveredTime)
                     .add(durationNumber, "minutes")
                     .format("hh:mm A, ")}
                 </Text>
-                {moment.utc(orderData.deliveredTime).format("DD/MM/YYYY")}{" "}
+                {moment(orderData.deliveredTime).format("DD/MM/YYYY")}{" "}
               </Text>
             ) : (
               <Text className="text-gray-500 font-semibold">

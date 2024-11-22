@@ -120,31 +120,24 @@ const OrderItem: React.FC<OrderItemProps> = ({
         <View className="flex-1 ">
           {order.status.id === 7 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.assignedTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.assignedTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           ) : order.status.id === 8 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.startDeliveringTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.startDeliveringTime).format(
+                "hh:mm A, DD/MM/YYYY"
+              ) || "Không xác định"}
             </Text>
           ) : order.status.id === 9 ? (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.deliveredTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.deliveredTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           ) : (
             <Text className="text-gray-400 text-sm font-medium italic">
-              {moment
-                .utc(order.assignedTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              {moment(order.assignedTime).format("hh:mm A, DD/MM/YYYY") ||
+                "Không xác định"}
             </Text>
           )}
 

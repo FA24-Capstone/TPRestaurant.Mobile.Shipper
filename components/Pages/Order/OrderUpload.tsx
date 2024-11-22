@@ -141,7 +141,7 @@ const OrderUpload: React.FC = () => {
               fetchOrdersByStatus({
                 shipperId: accountId,
                 pageNumber: 1,
-                pageSize: 10,
+                pageSize: 1000,
                 status,
               })
             )

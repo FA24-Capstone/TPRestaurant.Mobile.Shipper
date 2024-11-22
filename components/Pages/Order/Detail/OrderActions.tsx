@@ -109,7 +109,7 @@ const OrderActions: React.FC<OrderActionsProps> = ({
                 fetchOrdersByStatus({
                   shipperId: accountId, // Giả sử API trả về shipperId
                   pageNumber: 1,
-                  pageSize: 10,
+                  pageSize: 1000,
                   status,
                 })
               );
