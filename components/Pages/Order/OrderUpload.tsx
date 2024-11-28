@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker"; // Import ImagePicker from Expo
+import * as Location from "expo-location"; // Import Location from Expo
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -42,6 +43,10 @@ const OrderUpload: React.FC = () => {
   // State for storing multiple images
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   useEffect(() => {
     // Ẩn thanh tab khi màn hình này được mount
@@ -58,19 +63,42 @@ const OrderUpload: React.FC = () => {
   }, [navigation]);
 
   useEffect(() => {
-    const getPermission = async () => {
+    const getPermissions = async () => {
       const { status: cameraStatus } =
         await ImagePicker.requestCameraPermissionsAsync();
       const { status: galleryStatus } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status: locationStatus } =
+        await Location.requestForegroundPermissionsAsync();
 
-      if (cameraStatus !== "granted" || galleryStatus !== "granted") {
+      if (
+        cameraStatus !== "granted" ||
+        galleryStatus !== "granted" ||
+        locationStatus !== "granted"
+      ) {
         showErrorMessage(
-          "Permissions Required, Permissions to access camera and gallery are required!"
+          "Permissions Required, Permissions to access camera, gallery, and location are required!"
         );
       }
     };
-    getPermission();
+    getPermissions();
+  }, []);
+
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+      } catch (error) {
+        console.error("Error getting location:", error);
+        showErrorMessage("Failed to get location. Please try again.");
+      }
+    };
+
+    getLocation();
   }, []);
 
   // Handle Image Picker from Gallery
@@ -116,13 +144,26 @@ const OrderUpload: React.FC = () => {
       showErrorMessage("Order Id is required.");
       return;
     }
+    if (!location) {
+      showErrorMessage("Location is required.");
+      return;
+    }
 
     setUploading(true);
     try {
       // Call the upload API function
+      console.log("dataUpload", {
+        location: location,
+        lat: location.latitude,
+        lng: location.longitude,
+        isSuccessful: true,
+      });
       const response = await uploadConfirmedOrderImage({
-        orderId,
-        image,
+        orderId: orderId,
+        image: image,
+        lat: location.latitude,
+        lng: location.longitude,
+        isSuccessful: true,
       });
       console.log("responseUpload", response);
 
