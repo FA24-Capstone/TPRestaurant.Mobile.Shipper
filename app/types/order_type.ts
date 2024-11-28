@@ -253,6 +253,9 @@ export interface AssignOrderForShipperResponse {
 export interface UploadConfirmedOrderImageRequest {
   orderId: string;
   image: string; // Adjust the type based on your implementation
+  lat: number;
+  lng: number;
+  isSuccessful: boolean;
 }
 
 // Response for uploading confirmed order image
