@@ -96,6 +96,9 @@ export const uploadConfirmedOrderImage = async (
 ): Promise<AppActionResult<string>> => {
   const formData = new FormData();
   formData.append("OrderId", data.orderId);
+  formData.append("Lat", data.lat.toString());
+  formData.append("Lng", data.lng.toString());
+  formData.append("IsSuccessful", data.isSuccessful);
 
   const filename = data.image.split("/").pop();
   const type = "image/jpeg"; // You can change this if needed

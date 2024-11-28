@@ -21,6 +21,7 @@ import LoadingOverlay from "@/components/LoadingOverlay";
 import { RootState, useAppDispatch } from "@/redux/store";
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 import { useSelector } from "react-redux";
+import * as Location from "expo-location"; // Import Location from Expo
 
 interface RouteParams {
   orderIds: string[];
@@ -36,6 +37,10 @@ const OrderUploadList: React.FC = () => {
 
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   useEffect(() => {
     navigation.getParent()?.setOptions({
@@ -48,7 +53,44 @@ const OrderUploadList: React.FC = () => {
       });
     };
   }, [navigation]);
+  useEffect(() => {
+    const getPermissions = async () => {
+      const { status: cameraStatus } =
+        await ImagePicker.requestCameraPermissionsAsync();
+      const { status: galleryStatus } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status: locationStatus } =
+        await Location.requestForegroundPermissionsAsync();
 
+      if (
+        cameraStatus !== "granted" ||
+        galleryStatus !== "granted" ||
+        locationStatus !== "granted"
+      ) {
+        showErrorMessage(
+          "Permissions Required, Permissions to access camera, gallery, and location are required!"
+        );
+      }
+    };
+    getPermissions();
+  }, []);
+
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        setLocation({
+          lat: coords.latitude,
+          lng: coords.longitude,
+        });
+      } catch (error) {
+        console.error("Error getting location:", error);
+        showErrorMessage("Failed to get location. Please try again.");
+      }
+    };
+
+    getLocation();
+  }, []);
   const pickImageFromGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -82,7 +124,13 @@ const OrderUploadList: React.FC = () => {
     setUploading(true);
     try {
       const uploadPromises = orderIds.map((orderId) =>
-        uploadConfirmedOrderImage({ orderId, image })
+        uploadConfirmedOrderImage({
+          orderId: orderId,
+          image: image,
+          lat: location?.lat || 0,
+          lng: location?.lng || 0,
+          isSuccessful: true,
+        })
       );
 
       const results = await Promise.allSettled(uploadPromises);
