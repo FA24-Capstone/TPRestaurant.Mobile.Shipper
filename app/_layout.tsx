@@ -8,6 +8,7 @@ import store, { AppDispatch } from "@/redux/store";
 import { View, Text } from "react-native";
 import FlashMessage from "react-native-flash-message";
 import { initializeAuth } from "@/redux/slices/authSlice";
+import { setupInterceptors } from "@/api/config/interceptors";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +33,11 @@ function AppInitializer() {
     }
     prepare();
   }, [fontsLoaded, dispatch]);
+
+  // Kích hoạt interceptor với store
+  useEffect(() => {
+    setupInterceptors(store);
+  }, []); // Chỉ cần chạy một lần khi ứng dụng khởi động
 
   if (!fontsLoaded || !authInitialized) {
     return (

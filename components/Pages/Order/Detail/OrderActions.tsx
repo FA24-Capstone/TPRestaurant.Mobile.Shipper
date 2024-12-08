@@ -60,6 +60,43 @@ const OrderActions: React.FC<OrderActionsProps> = ({
         onRefetch();
 
         showSuccessMessage("Đơn hàng này bắt đầu được giao!");
+
+        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+        if (accountId) {
+          const statuses = [7, 8];
+          const fetchPromises = statuses.map((status) =>
+            dispatch(
+              fetchOrdersByStatus({
+                shipperId: accountId,
+                pageNumber: 1,
+                pageSize: 1000,
+                status,
+              })
+            )
+          );
+
+          // Chờ tất cả các dispatch hoàn thành
+          const results = await Promise.allSettled(fetchPromises);
+
+          // Xử lý lỗi từ các fetchOrdersByStatus
+          const failedFetches = results.filter(
+            (result) => result.status === "rejected"
+          );
+
+          if (failedFetches.length > 0) {
+            failedFetches.forEach((failure) => {
+              console.error("Fetch status failed:", failure);
+              // Hiển thị thông báo lỗi từ từng dispatch thất bại
+              showErrorMessage(
+                failure.reason ||
+                  "A system error occurred while updating statuses."
+              );
+            });
+          }
+        } else {
+          showErrorMessage("Account ID is required.");
+        }
+
         // Hiển thị thông báo thành công và cập nhật giao diện nếu cần
       } else {
         console.error("Failed to update order status:", response.messages);
