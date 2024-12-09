@@ -139,29 +139,24 @@ const SettingScreen: React.FC = () => {
 
   // Handle logout
   const handleLogout = async () => {
+    console.log("Logout started");
     Alert.alert("Đăng xuất", "Bạn có chắc chắn đăng xuất không?", [
       { text: "Huỷ", style: "cancel" },
       {
-        text: "Đăng Xuất  ",
+        text: "Đăng Xuất",
         style: "destructive",
         onPress: async () => {
+          console.log("Confirmed logout");
           let token = await secureStorage.getItem("token");
-          console.log("hehehe", token);
+          console.log("Token from storage:", token);
           if (token) {
-            const response = await getUserTokenByIp(token);
-            console.log("hehehe2", response);
-            if (response.isSuccess) {
-              const tokenData = response.result as TokenData;
-              await deleteToken(tokenData.tokenId);
-              await secureStorage.removeItem("token");
-              await secureStorage.removeItem("refreshToken");
-              dispatch(logout());
-            } else {
-              await secureStorage.removeItem("token");
-              await secureStorage.removeItem("refreshToken");
-              dispatch(logout());
-            }
+            console.log("Token deleted");
+            await secureStorage.removeItem("token");
+            await secureStorage.removeItem("refreshToken");
+            dispatch(logout());
+            router.replace("/login");
           }
+          console.log("User logged out");
           router.replace("/login");
           showSuccessMessage("Đăng xuất thành công!");
         },
