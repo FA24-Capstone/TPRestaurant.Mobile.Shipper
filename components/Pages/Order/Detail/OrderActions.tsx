@@ -4,7 +4,11 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Order } from "@/app/types/order_type";
 import CancelOrderModal from "./CancelOrderModal";
-import { cancelDeliveringOrder, updateOrderDetailStatus } from "@/api/orderApi";
+import {
+  cancelDeliveringOrder,
+  updateOrderDetailStatus,
+  uploadConfirmedOrderImage,
+} from "@/api/orderApi";
 import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "@/redux/store";
 import {
@@ -12,6 +16,7 @@ import {
   showSuccessMessage,
 } from "@/components/FlashMessageHelpers";
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Define the types for navigation routes
 type RootStackParamList = {
@@ -33,6 +38,7 @@ const OrderActions: React.FC<OrderActionsProps> = ({
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
   const [isDelivering, setIsDelivering] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDelivered = () => {
     // console.log("orderData.orderId", orderData.orderId);
@@ -115,7 +121,11 @@ const OrderActions: React.FC<OrderActionsProps> = ({
     setModalVisible(true);
   };
 
-  const handleSubmitCancel = async (reason: string) => {
+  const handleSubmitCancel = async (
+    reason: string,
+    refundRequired: boolean
+  ) => {
+    setLoading(true);
     try {
       console.log("Lý do hủy đơn:", reason);
       if (!reason) {
@@ -123,13 +133,13 @@ const OrderActions: React.FC<OrderActionsProps> = ({
         return;
       }
       if (accountId) {
-        // Gọi API hủy đơn với lý do
-        const response = await cancelDeliveringOrder(
-          orderData.orderId,
-          reason,
-          accountId, // Thay bằng giá trị thích hợp
-          false // isCancelledByAdmin có thể được điều chỉnh theo ngữ cảnh
-        );
+        // Gọi API upload hình ảnh với thông tin huỷ đơn
+        const response = await uploadConfirmedOrderImage({
+          orderId: orderData.orderId,
+          isSuccessful: false, // Đánh dấu là huỷ đơn
+          cancelReason: reason, // Lý do hủy
+          refundRequired,
+        });
 
         // Gọi hàm làm mới dữ liệu khi hủy đơn thành công
         if (response.isSuccess) {
@@ -160,11 +170,14 @@ const OrderActions: React.FC<OrderActionsProps> = ({
     } catch (error) {
       // Đã có thông báo lỗi hiển thị thông qua showErrorMessage trong API function
       console.error("Error canceling order:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View>
+      <LoadingOverlay visible={loading} />
       <View className="flex-row justify-around">
         {orderData.statusId === 10 ? (
           <View>
