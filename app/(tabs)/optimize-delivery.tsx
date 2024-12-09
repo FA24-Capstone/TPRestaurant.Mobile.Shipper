@@ -23,6 +23,9 @@ import {
 } from "@/components/FlashMessageHelpers";
 import DeliveryCard from "@/components/Pages/Delivery/DeliveryCard";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSelector } from "react-redux";
+import { RootState, useAppDispatch } from "@/redux/store";
+import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 
 interface RouteParams {
   selectedOrders: string[];
@@ -31,6 +34,8 @@ interface RouteParams {
 const OptimizeDelivery: React.FC = () => {
   const cachedDeliveriesRef = useRef<DeliveryGroup[] | null>(null);
   const selectedOrdersRef = useRef<string[] | null>(null); // Lưu cache danh sách đơn hàng
+  const accountId = useSelector((state: RootState) => state.auth.account?.id);
+  const dispatch = useAppDispatch();
 
   const navigation = useNavigation();
   const route = useRoute();
@@ -199,7 +204,8 @@ const OptimizeDelivery: React.FC = () => {
   // Dùng useFocusEffect để load lại mỗi khi màn hình được focus
   useFocusEffect(
     useCallback(() => {
-      fetchOptimalPath(); // Gọi lại API nếu cần reload
+      handleReload(); // Gọi
+      fetchOptimalPath(true); // Gọi lại API nếu cần reload
     }, [fetchOptimalPath])
   );
 
@@ -229,6 +235,42 @@ const OptimizeDelivery: React.FC = () => {
       if (allSuccess) {
         showSuccessMessage("Tất cả đơn hàng đã bắt đầu được giao!");
         setIsDelivering(true); // Trigger re-fetching
+
+        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+        if (accountId) {
+          const statuses = [7, 8];
+          const fetchPromises = statuses.map((status) =>
+            dispatch(
+              fetchOrdersByStatus({
+                shipperId: accountId,
+                pageNumber: 1,
+                pageSize: 1000,
+                status,
+              })
+            )
+          );
+
+          // Chờ tất cả các dispatch hoàn thành
+          const results = await Promise.allSettled(fetchPromises);
+
+          // Xử lý lỗi từ các fetchOrdersByStatus
+          const failedFetches = results.filter(
+            (result) => result.status === "rejected"
+          );
+
+          if (failedFetches.length > 0) {
+            failedFetches.forEach((failure) => {
+              console.error("Fetch status failed:", failure);
+              // Hiển thị thông báo lỗi từ từng dispatch thất bại
+              showErrorMessage(
+                failure.reason ||
+                  "A system error occurred while updating statuses."
+              );
+            });
+          }
+        } else {
+          showErrorMessage("Account ID is required.");
+        }
       } else {
         const failedOrders = responses
           .map((response, index) => ({
