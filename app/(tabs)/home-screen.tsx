@@ -23,6 +23,7 @@ import {
 import * as signalR from "@microsoft/signalr"; // Import SignalR
 import { fetchOrdersByStatus } from "@/redux/slices/orderSlice";
 import { fetchNotifications } from "@/redux/slices/notificationSlice";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -53,8 +54,8 @@ const HomeScreen = () => {
 
   // Fetch all orders
   const fetchAllOrders = useCallback(async () => {
-    if (hasFetchedRef.current) return; // Ngăn gọi lại không cần thiết
-    hasFetchedRef.current = true;
+    // if (hasFetchedRef.current) return; // Ngăn gọi lại không cần thiết
+    // hasFetchedRef.current = true;
 
     try {
       if (!profile?.id) {
@@ -260,6 +261,15 @@ const HomeScreen = () => {
     <View className="bg-white flex-1">
       <WelcomeHeader />
       {loading && <ActivityIndicator size="large" color="#970C1A" />}
+      <TouchableOpacity
+        onPress={fetchAllOrders}
+        className="mx-4 mt-2 flex-row justify-end items-center"
+      >
+        <MaterialCommunityIcons name="reload" size={24} color="#A1011A" />
+        <Text className="text-[#A1011A] ml-2 text-center font-semibold text-base">
+          Tải lại
+        </Text>
+      </TouchableOpacity>
       <OrderSummary
         completedOrders={completedOrders}
         pendingOrders={pendingOrders}

@@ -96,23 +96,51 @@ export const uploadConfirmedOrderImage = async (
 ): Promise<AppActionResult<string>> => {
   const formData = new FormData();
   formData.append("OrderId", data.orderId);
-  formData.append("Lat", data.lat.toString());
-  formData.append("Lng", data.lng.toString());
-  formData.append("IsSuccessful", data.isSuccessful);
+  formData.append("IsSuccessful", data.isSuccessful.toString());
 
-  const filename = data.image.split("/").pop();
-  const type = "image/jpeg"; // You can change this if needed
-  formData.append("Image", {
-    uri: data.image,
-    name: filename,
-    type: type,
-  } as any);
+  // Trường hợp giao hàng thành công
+  if (data.isSuccessful) {
+    if (data.lat && data.lng) {
+      formData.append("Lat", data.lat.toString());
+      formData.append("Lng", data.lng.toString());
+    }
 
-  console.log("dataUpload", {
-    orderId: data.orderId,
-    image: data.image,
-  });
+    if (data.image) {
+      const filename = data.image.split("/").pop();
+      const type = "image/jpeg"; // Có thể điều chỉnh loại file nếu cần
+      formData.append("Image", {
+        uri: data.image,
+        name: filename,
+        type: type,
+      } as any);
+    }
 
+    console.log("Upload Successful Delivery Data:", {
+      orderId: data.orderId,
+      image: data.image,
+      lat: data.lat,
+      lng: data.lng,
+    });
+  }
+
+  // Trường hợp huỷ đơn
+  if (!data.isSuccessful) {
+    if (data.cancelReason) {
+      formData.append("CancelReason", data.cancelReason);
+    }
+    if (data.refundRequired !== undefined) {
+      formData.append("RefundRequired", data.refundRequired.toString());
+    }
+
+    console.log("Upload Cancellation Data:", {
+      orderId: data.orderId,
+      cancelReason: data.cancelReason,
+      isSuccessful: data.isSuccessful,
+      refundRequired: data.refundRequired,
+    });
+  }
+
+  // Gửi yêu cầu tới API
   const response = await apiClient.post<AppActionResult<string>>(
     `/order/upload-confirmed-order-image`,
     formData,
@@ -186,6 +214,13 @@ export const cancelDeliveringOrder = async (
   shipperRequestId: string,
   isCancelledByAdmin: boolean
 ): Promise<AppActionResult<any | null>> => {
+  console.log("cancelDeliveringOrder", {
+    orderId,
+    cancelledReasons,
+    shipperRequestId,
+    isCancelledByAdmin,
+  });
+
   const response = await apiClient.post<AppActionResult<any | null>>(
     `/order/cancel-delivering-order`,
     {

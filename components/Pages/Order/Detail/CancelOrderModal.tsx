@@ -13,7 +13,7 @@ import {
 interface CancelOrderModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (reason: string) => void;
+  onSubmit: (reason: string, refundRequired: boolean) => void;
 }
 
 const reasons = [
@@ -30,19 +30,27 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
 }) => {
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [otherReason, setOtherReason] = useState<string>("");
+  const [refundRequired, setRefundRequired] = useState<boolean | null>(null);
 
   const handleSubmit = () => {
-    if (selectedReason === "Khác") {
-      if (otherReason.trim() === "") {
-        showErrorMessage("Vui lòng nhập lý do của bạn.");
-        return;
-      }
-      onSubmit(otherReason);
-    } else if (selectedReason) {
-      onSubmit(selectedReason);
-    } else {
+    if (!selectedReason && selectedReason !== "Khác") {
       showErrorMessage("Vui lòng chọn lý do hủy đơn.");
+      return;
     }
+
+    if (selectedReason === "Khác" && otherReason.trim() === "") {
+      showErrorMessage("Vui lòng nhập lý do của bạn.");
+      return;
+    }
+
+    if (refundRequired === null) {
+      showErrorMessage("Vui lòng chọn hoàn tiền hoặc không hoàn tiền.");
+      return;
+    }
+
+    const reasonToSubmit =
+      selectedReason === "Khác" ? otherReason : selectedReason;
+    onSubmit(reasonToSubmit, refundRequired);
   };
 
   return (
@@ -92,6 +100,35 @@ const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                 onChangeText={setOtherReason}
               />
             )}
+
+            {/* Refund Options */}
+            <View style={styles.refundContainer}>
+              <Text style={styles.subTitle}>Chọn hoàn tiền:</Text>
+              <View style={styles.refundOptions}>
+                <TouchableOpacity
+                  style={styles.radioContainer}
+                  onPress={() => setRefundRequired(true)}
+                >
+                  <View style={styles.radioCircle}>
+                    {refundRequired === true && (
+                      <View style={styles.selectedRb} />
+                    )}
+                  </View>
+                  <Text style={styles.radioLabel}>Hoàn tiền</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.radioContainer}
+                  onPress={() => setRefundRequired(false)}
+                >
+                  <View style={styles.radioCircle}>
+                    {refundRequired === false && (
+                      <View style={styles.selectedRb} />
+                    )}
+                  </View>
+                  <Text style={styles.radioLabel}>Không hoàn tiền</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </ScrollView>
 
           <View style={styles.buttonContainer}>
@@ -190,5 +227,26 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+  },
+
+  refundContainer: {
+    marginTop: 20,
+  },
+  subTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  refundOptions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  radioContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  radioLabel: {
+    fontSize: 16,
+    color: "#333",
   },
 });

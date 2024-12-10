@@ -343,7 +343,7 @@ const OrderListDelivery: React.FC = () => {
         setSelectedOrders([]);
 
         // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
-        const statuses = [7, 8, 9, 10]; // Các status codes bạn muốn refetch
+        const statuses = [7, 8]; // Các status codes bạn muốn refetch
         if (accountId) {
           statuses.forEach((status) => {
             dispatch(
