@@ -145,7 +145,7 @@ const OrderUpload: React.FC = () => {
       return;
     }
     if (!location) {
-      showErrorMessage("Location is required.");
+      showErrorMessage("Bạn vui lòng chờ chút để xác định vị trí!");
       return;
     }
 
