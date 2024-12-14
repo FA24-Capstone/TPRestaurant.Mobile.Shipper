@@ -121,65 +121,81 @@ const OrderUploadList: React.FC = () => {
       return;
     }
 
+    if (!location) {
+      showErrorMessage("Bạn vui lòng chờ chút để xác định vị trí!");
+      return;
+    }
+
     setUploading(true);
     try {
-      const uploadPromises = orderIds.map((orderId) =>
-        uploadConfirmedOrderImage({
-          orderId: orderId,
-          image: image,
-          lat: location?.lat || 0,
-          lng: location?.lng || 0,
-          isSuccessful: true,
-        })
-      );
+      for (const orderId of orderIds) {
+        try {
+          const response = await uploadConfirmedOrderImage({
+            orderId: orderId,
+            image: image,
+            lat: location?.lat || 0,
+            lng: location?.lng || 0,
+            isSuccessful: true,
+          });
 
-      const results = await Promise.allSettled(uploadPromises);
-
-      const failedUploads = results.filter(
-        (result) => result.status === "rejected"
-      );
-
-      if (failedUploads.length > 0) {
-        showErrorMessage(`${failedUploads.length} đơn hàng không thể tải lên.`);
-      } else {
-        showSuccessMessage("Tất cả đơn hàng đã được giao!");
-        navigation.goBack();
-
-        // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
-        if (accountId) {
-          const statuses = [8, 9];
-          const fetchPromises = statuses.map((status) =>
-            dispatch(
-              fetchOrdersByStatus({
-                shipperId: accountId,
-                pageNumber: 1,
-                pageSize: 1000,
-                status,
-              })
-            )
-          );
-
-          // Chờ tất cả các dispatch hoàn thành
-          const results = await Promise.allSettled(fetchPromises);
-
-          // Xử lý lỗi từ các fetchOrdersByStatus
-          const failedFetches = results.filter(
-            (result) => result.status === "rejected"
-          );
-
-          if (failedFetches.length > 0) {
-            failedFetches.forEach((failure) => {
-              console.error("Fetch status failed:", failure);
-              // Hiển thị thông báo lỗi từ từng dispatch thất bại
-              showErrorMessage(
-                failure.reason ||
-                  "A system error occurred while updating statuses."
-              );
-            });
+          if (response?.isSuccess !== true) {
+            showErrorMessage(
+              `Lỗi tải lên đơn hàng ${orderId}: ${
+                response?.messages.join(", ") || "Unknown error"
+              }`
+            );
+            setUploading(false);
+            return; // Dừng quá trình nếu gặp lỗi
           }
-        } else {
-          showErrorMessage("Account ID is required.");
+        } catch (error) {
+          console.error(`Error uploading order ${orderId}:`, error);
+          showErrorMessage(
+            `Lỗi tải lên đơn hàng ${orderId}: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+          setUploading(false);
+          return; // Dừng quá trình nếu gặp lỗi
         }
+      }
+
+      // Nếu tất cả đơn hàng đều tải lên thành công
+      showSuccessMessage("Tất cả đơn hàng đã được giao!");
+      navigation.goBack();
+
+      // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
+      if (accountId) {
+        const statuses = [8, 9];
+        const fetchPromises = statuses.map((status) =>
+          dispatch(
+            fetchOrdersByStatus({
+              shipperId: accountId,
+              pageNumber: 1,
+              pageSize: 1000,
+              status,
+            })
+          )
+        );
+
+        // Chờ tất cả các dispatch hoàn thành
+        const results = await Promise.allSettled(fetchPromises);
+
+        // Xử lý lỗi từ các fetchOrdersByStatus
+        const failedFetches = results.filter(
+          (result) => result.status === "rejected"
+        );
+
+        if (failedFetches.length > 0) {
+          failedFetches.forEach((failure) => {
+            console.error("Fetch status failed:", failure);
+            showErrorMessage(
+              failure.reason ||
+                "A system error occurred while updating statuses."
+            );
+          });
+        }
+      } else {
+        showErrorMessage("Account ID is required.");
       }
     } catch (error) {
       console.error("Error uploading images:", error);
