@@ -27,17 +27,19 @@ import { View, Text, TouchableOpacity, Image, Linking } from "react-native";
 interface DeliveryCardProps {
   delivery: DeliveryGroup;
   setIsDelivering?: (isDelivering: boolean) => void;
+  typeMap: string;
 }
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderDetail: { orderId: string };
+  OrderDetail: { orderId: string; typeMap: string };
   OrderUploadList: { orderIds: string[] };
 };
 
 const DeliveryCard: React.FC<DeliveryCardProps> = ({
   delivery,
   setIsDelivering,
+  typeMap,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
@@ -144,6 +146,8 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
           ? "bg-[#F1F8FF]"
           : delivery.status === 7
           ? "bg-[#FFF4E0]"
+          : delivery.status === 11
+          ? "bg-[#ffffff] border border-gray-300"
           : "bg-[#FFF7F2]"
       }`}
     >
@@ -173,6 +177,8 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
             ? "Đang giao"
             : delivery.status === 7
             ? "Chờ giao"
+            : delivery.status === 11
+            ? ""
             : "Đã hủy"}
         </Text>
       </View>
@@ -307,7 +313,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
           {/* Toggle between chevron-down and chevron-up based on `isDropdownOpen` */}
           <TouchableOpacity onPress={toggleDropdown} className="mt-3 mx-auto">
             <MaterialCommunityIcons
-              name={isDropdownOpen ? "chevron-down" : "chevron-up"} // Toggle icon
+              name={isDropdownOpen ? "chevron-up" : "chevron-down"} // Toggle icon
               size={26}
               color={"gray"}
             />
@@ -335,6 +341,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                 onPress={() =>
                   navigation.navigate("OrderDetail", {
                     orderId: delivery.orders[0].id,
+                    typeMap: typeMap,
                   })
                 }
               >
@@ -397,10 +404,15 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                     ? "bg-[#084466]/5"
                     : delivery.status === 7
                     ? "bg-[#341F00]/5"
+                    : delivery.status === 11
+                    ? "bg-[#ffffff] border border-gray-300"
                     : "bg-[#4D0000]/5"
                 } py-2 rounded-lg`}
                 onPress={() =>
-                  navigation.navigate("OrderDetail", { orderId: order.id })
+                  navigation.navigate("OrderDetail", {
+                    orderId: order.id,
+                    typeMap: typeMap,
+                  })
                 }
               >
                 <Text className="text-gray-600 text-center font-semibold text-base">

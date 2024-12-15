@@ -116,8 +116,60 @@ export interface Order {
   totalDistance?: number;
   totalDuration?: number;
   cancelDeliveryReason: string;
+
+  cancelledTime?: any;
+  cashReceived?: any;
+  changeReturned?: any;
+  addressId?: string;
+  customerInfoAddress?: CustomerInfoAddress;
 }
 
+export interface CustomerInfoAddress {
+  customerInfoAddressId: string;
+  customerInfoAddressName: string;
+  isCurrentUsed: boolean;
+  accountId: string;
+  account: Account2;
+  lat: number;
+  lng: number;
+  isDeleted: boolean;
+}
+
+export interface Account2 {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dob: string;
+  gender: boolean;
+  address: string;
+  otp: string;
+  isVerified: boolean;
+  isDeleted: boolean;
+  loyaltyPoint: string;
+  avatar: any;
+  isManuallyCreated: boolean;
+  isDelivering: boolean;
+  storeCreditAmount: string;
+  expiredDate: string;
+  registeredDate: string;
+  isBanned: boolean;
+  userRankId: number;
+  userRank: any;
+  id: string;
+  userName: string;
+  normalizedUserName: string;
+  email: string;
+  normalizedEmail: string;
+  emailConfirmed: boolean;
+  passwordHash?: string;
+  securityStamp: string;
+  concurrencyStamp: string;
+  phoneNumberConfirmed: boolean;
+  twoFactorEnabled: boolean;
+  lockoutEnd: any;
+  lockoutEnabled: boolean;
+  accessFailedCount: number;
+}
 export interface Shipper {
   firstName: string;
   lastName: string;

@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import { jwtDecode } from "jwt-decode";
 import { AccountProfile } from "@/app/types/profile_type";
+import { fetchNotifications } from "./notificationSlice";
 
 interface AuthState {
   isLoggedIn: boolean;
@@ -65,6 +66,9 @@ export const initializeAuth = createAsyncThunk(
               deviceResponse: null,
             })
           );
+
+          // Gọi fetchNotifications ngay sau khi đăng nhập
+          await dispatch(fetchNotifications(accountId));
         } else {
           // Nếu thất bại, xóa token và refreshToken, sau đó đăng xuất
           await secureStorage.removeItem("token");

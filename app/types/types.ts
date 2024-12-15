@@ -2,7 +2,7 @@
 
 export type RootStackParamList = {
   OrderListDelivery: undefined;
-  OrderDetail: { orderId: string };
+  OrderDetail: { orderId: string; typeMap?: string };
   OptimizeDelivery: undefined;
   OrderUpload: undefined;
 };

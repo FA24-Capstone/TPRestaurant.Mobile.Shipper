@@ -10,7 +10,7 @@ import {
 import * as ImagePicker from "expo-image-picker"; // Import ImagePicker from Expo
 import * as Location from "expo-location"; // Import Location from Expo
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { StackNavigationProp } from "@react-navigation/stack";
 import {
   showSuccessMessage,
@@ -30,13 +30,16 @@ type RootStackParamList = {
 
 interface RouteParams {
   orderId: string;
+  typeMap: string;
 }
 
 const OrderUpload: React.FC = () => {
   const dispatch = useAppDispatch();
   const route = useRoute();
-  const { orderId } = route.params as RouteParams;
-  console.log("orderId", orderId);
+  const router = useRouter();
+
+  const { orderId, typeMap } = route.params as RouteParams;
+  console.log("orderIdtypeMap", orderId, typeMap);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const accountId = useSelector((state: RootState) => state.auth.account?.id);
 
@@ -171,8 +174,12 @@ const OrderUpload: React.FC = () => {
         console.log("Image uploaded successfully:", response);
 
         showSuccessMessage("Đơn hàng này đã được giao!");
-        // navigation.replace("OrderDetail", { orderId });
-        navigation.goBack();
+        //( navigation.replace("OrderDetail", { orderId });
+        if (typeMap === "optimal") {
+          router.back();
+        } else {
+          navigation.goBack();
+        }
 
         // Dispatch thunk để refetch danh sách đơn hàng sau khi cập nhật thành công
         if (accountId) {

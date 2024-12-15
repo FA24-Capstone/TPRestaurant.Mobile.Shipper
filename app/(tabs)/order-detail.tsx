@@ -35,13 +35,13 @@ type OrderDetailRouteProp = RouteProp<RootStackParamList, "OrderDetail">;
 const OrderDetail = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute<OrderDetailRouteProp>();
-  const { orderId } = route.params; // Lấy orderId từ params
+  const { orderId, typeMap } = route.params; // Lấy orderId từ params
 
   const [orderData, setOrderData] = useState<OrderHistoryData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // console.log("orderDataNE", JSON.stringify(orderData));
+  console.log("typeMap", typeMap);
 
   useEffect(() => {
     // Ẩn thanh tab khi màn hình này được mount
@@ -150,6 +150,7 @@ const OrderDetail = () => {
           <OrderActions
             orderData={orderData.order}
             onRefetch={refetchOrderDetails}
+            typeMap={typeMap ?? ""}
           />
         )}
       </View>
