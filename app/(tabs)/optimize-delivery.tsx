@@ -118,6 +118,8 @@ const OptimizeDelivery: React.FC = () => {
                     ? "#1D72C0"
                     : order.statusId === 9
                     ? "#4F970F"
+                    : order.statusId === 11
+                    ? "#000000"
                     : "#9A0E1D",
                 time: item.duration,
                 distanceToNextDestination: item.distanceFromPreviousDestination,
@@ -158,7 +160,21 @@ const OptimizeDelivery: React.FC = () => {
                   orders: [delivery],
                 });
               } else {
-                map.get(addressKey)?.orders.push(delivery);
+                const group = map.get(addressKey);
+                group.orders.push(delivery);
+
+                // Kiểm tra trạng thái của tất cả các đơn hàng trong nhóm
+                const allSameStatus: boolean = group.orders.every(
+                  (order: Delivery) => order.status === group.orders[0].status
+                );
+
+                if (allSameStatus) {
+                  group.status = group.orders[0].status; // Lấy trạng thái đại diện nếu giống nhau
+                  group.color = group.orders[0].color; // Lấy màu tương ứng
+                } else {
+                  group.status = 11; // Gán trạng thái mặc định cho nhóm không đồng nhất
+                  group.color = "#00000"; // Màu trắng cho trạng thái 11
+                }
               }
               return map;
             }, new Map())

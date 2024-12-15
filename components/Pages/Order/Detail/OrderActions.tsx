@@ -170,6 +170,8 @@ const OrderActions: React.FC<OrderActionsProps> = ({
             showErrorMessage("Account ID is required.");
           }
           onRefetch();
+        } else {
+          showErrorMessage(response.messages.join("\n"));
         }
       }
     } catch (error) {
