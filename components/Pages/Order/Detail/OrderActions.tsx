@@ -20,17 +20,19 @@ import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderUpload: { orderId: string };
+  OrderUpload: { orderId: string; typeMap: string };
 };
 
 interface OrderActionsProps {
   orderData: Order;
   onRefetch: () => void; // Thêm prop này để gọi hàm làm mới dữ liệu
+  typeMap: string;
 }
 
 const OrderActions: React.FC<OrderActionsProps> = ({
   orderData,
   onRefetch,
+  typeMap,
 }) => {
   const dispatch = useAppDispatch();
 
@@ -43,7 +45,10 @@ const OrderActions: React.FC<OrderActionsProps> = ({
   const handleDelivered = () => {
     // console.log("orderData.orderId", orderData.orderId);
 
-    navigation.navigate("OrderUpload", { orderId: orderData.orderId });
+    navigation.navigate("OrderUpload", {
+      orderId: orderData.orderId,
+      typeMap: typeMap,
+    });
   };
 
   const handleDelivering = async () => {
@@ -165,6 +170,8 @@ const OrderActions: React.FC<OrderActionsProps> = ({
             showErrorMessage("Account ID is required.");
           }
           onRefetch();
+        } else {
+          showErrorMessage(response.messages.join("\n"));
         }
       }
     } catch (error) {

@@ -27,17 +27,19 @@ import { View, Text, TouchableOpacity, Image, Linking } from "react-native";
 interface DeliveryCardProps {
   delivery: DeliveryGroup;
   setIsDelivering?: (isDelivering: boolean) => void;
+  typeMap: string;
 }
 
 // Define the types for navigation routes
 type RootStackParamList = {
-  OrderDetail: { orderId: string };
+  OrderDetail: { orderId: string; typeMap: string };
   OrderUploadList: { orderIds: string[] };
 };
 
 const DeliveryCard: React.FC<DeliveryCardProps> = ({
   delivery,
   setIsDelivering,
+  typeMap,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
@@ -137,17 +139,19 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
 
   return (
     <View
-      className={`mx-4 mb-4 p-4 rounded-lg shadow ${
+      className={`mx-4 mb-4  rounded-lg shadow ${
         delivery.status === 9
           ? "bg-[#F8FFF2]"
           : delivery.status === 8
           ? "bg-[#F1F8FF]"
           : delivery.status === 7
           ? "bg-[#FFF4E0]"
+          : delivery.status === 11
+          ? "bg-[#ffffff] border border-gray-300"
           : "bg-[#FFF7F2]"
       }`}
     >
-      <View className="flex-row justify-between">
+      <View className="flex-row p-4 justify-between">
         <Text
           className={`text-lg font-bold ${
             delivery.status === 9 ? "w-[55%]" : "w-[75%]"
@@ -173,11 +177,13 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
             ? "Đang giao"
             : delivery.status === 7
             ? "Chờ giao"
+            : delivery.status === 11
+            ? ""
             : "Đã hủy"}
         </Text>
       </View>
 
-      <View className="flex-row mt-2 items-center  ">
+      <View className="flex-row p-4 mt-2 items-center  ">
         <View>
           <Text className=" my-1 text-center text-red-500 font-bold text-lg">
             {delivery.time}
@@ -275,7 +281,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
       </View>
       {/* If multiple orders, show dropdown icon */}
       {hasMultipleOrders && delivery.orders[0].id ? (
-        <>
+        <View className="p-4">
           <View className="flex-row justify-between">
             {delivery.status === 8 && delivery.orders[0].id && (
               <TouchableOpacity
@@ -307,14 +313,14 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
           {/* Toggle between chevron-down and chevron-up based on `isDropdownOpen` */}
           <TouchableOpacity onPress={toggleDropdown} className="mt-3 mx-auto">
             <MaterialCommunityIcons
-              name={isDropdownOpen ? "chevron-down" : "chevron-up"} // Toggle icon
+              name={isDropdownOpen ? "chevron-up" : "chevron-down"} // Toggle icon
               size={26}
               color={"gray"}
             />
           </TouchableOpacity>
-        </>
+        </View>
       ) : (
-        <View className="flex-row justify-between">
+        <View className="flex-row p-4 justify-between">
           {delivery.orders[0].id && (
             <TouchableOpacity
               className={` mt-2 w-[48%] ${
@@ -324,6 +330,8 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                   ? "bg-[#084466]/5"
                   : delivery.status === 7
                   ? "bg-[#341F00]/5"
+                  : delivery.status === 11
+                  ? "#ffffff"
                   : "bg-[#4D0000]/5"
               } py-2 rounded-lg`}
               onPress={() =>
@@ -335,6 +343,7 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
                 onPress={() =>
                   navigation.navigate("OrderDetail", {
                     orderId: delivery.orders[0].id,
+                    typeMap: typeMap,
                   })
                 }
               >
@@ -369,47 +378,87 @@ const DeliveryCard: React.FC<DeliveryCardProps> = ({
       {/* If dropdown is expanded and multiple orders */}
       {isDropdownOpen &&
         hasMultipleOrders &&
-        delivery.orders.map((order) => (
-          <View key={order.id} className="mb-2 mt-4">
-            <Text className="text-gray-400 text-sm font-medium italic">
-              {moment(order.assignedTime)
-                .local()
-                .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
-            </Text>
-
-            <Text
-              className="text-lg font-bold uppercase"
-              style={{ color: delivery.color }}
+        delivery.orders.map((order) => {
+          console.log("====================================");
+          console.log(order);
+          console.log("====================================");
+          return (
+            <View
+              key={order.id}
+              className={`mb-2 mt-4 p-4 ${
+                order.status === 9
+                  ? "bg-[#F8FFF2]"
+                  : order.status === 8
+                  ? "bg-[#F1F8FF]"
+                  : order.status === 7
+                  ? "bg-[#FFF4E0]"
+                  : "bg-[#FFF7F2]"
+              }`}
             >
-              Order ID: #{order.id.slice(0, 8)}
-            </Text>
-            <Text className="text-gray-700 text-sm font-semibold">
-              Địa chỉ: {order.order.account.address}
-            </Text>
-
-            {/* Two buttons for each order */}
-            <View className="flex-row justify-between mt-2">
-              <TouchableOpacity
-                className={` mt-2 w-full ${
-                  delivery.status === 9
-                    ? "bg-[#086634]/5"
-                    : delivery.status === 8
-                    ? "bg-[#084466]/5"
-                    : delivery.status === 7
-                    ? "bg-[#341F00]/5"
-                    : "bg-[#4D0000]/5"
-                } py-2 rounded-lg`}
-                onPress={() =>
-                  navigation.navigate("OrderDetail", { orderId: order.id })
-                }
-              >
-                <Text className="text-gray-600 text-center font-semibold text-base">
-                  Xem
+              <Text className="text-gray-400 text-sm font-medium italic">
+                {moment(order.assignedTime)
+                  .local()
+                  .format("hh:mm A, DD/MM/YYYY") || "Không xác định"}
+              </Text>
+              <View className="flex-row justify-between">
+                <Text
+                  className="text-lg font-bold uppercase"
+                  style={{ color: delivery.color }}
+                >
+                  Order ID: #{order.id.slice(0, 8)}
                 </Text>
-              </TouchableOpacity>
+                <Text
+                  className={`text-base ${
+                    order.status === 9
+                      ? "text-[#4F970F]"
+                      : order.status === 8
+                      ? "text-[#1D72C0]"
+                      : order.status === 7
+                      ? "text-[#E3B054]"
+                      : "text-[#ff3f3f]"
+                  } text-right font-bold uppercase`}
+                >
+                  {order.status === 9
+                    ? "Đã HOÀN THÀNH"
+                    : order.status === 8
+                    ? "Đang giao"
+                    : order.status === 7
+                    ? "Chờ giao"
+                    : "Đã hủy"}
+                </Text>
+              </View>
+
+              <Text className="text-gray-700 text-sm font-semibold">
+                Địa chỉ: {order.order.account.address}
+              </Text>
+
+              {/* Two buttons for each order */}
+              <View className="flex-row justify-between mt-2">
+                <TouchableOpacity
+                  className={` mt-2 w-full ${
+                    order.status === 9
+                      ? "bg-[#086634]/5"
+                      : order.status === 8
+                      ? "bg-[#084466]/5"
+                      : order.status === 7
+                      ? "bg-[#341F00]/5"
+                      : "bg-[#4D0000]/5"
+                  } py-2 rounded-lg`}
+                  onPress={() =>
+                    navigation.navigate("OrderDetail", {
+                      orderId: order.id,
+                      typeMap: typeMap,
+                    })
+                  }
+                >
+                  <Text className="text-gray-600 text-center font-semibold text-base">
+                    Xem
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
     </View>
   );
 };

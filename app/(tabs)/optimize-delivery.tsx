@@ -101,11 +101,13 @@ const OptimizeDelivery: React.FC = () => {
 
         if (response.isSuccess) {
           // Gắn tạm địa chỉ trước đó để bắt đầu xử lý tuyến đường
+          const defaultAddress =
+            "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
+
+          let previousAddress = defaultAddress; // Bắt đầu với địa chỉ mặc định
 
           const mappedDeliveries = response.result.flatMap((item) => {
-            let previousAddress =
-              "78 Đường Lý Tự Trọng, Phường 2, TP Đà Lạt, Lâm Đồng 66109";
-            return item.orders.map((order) => {
+            return item.orders.map((order, index) => {
               const delivery = {
                 id: order.orderId,
                 status: order.statusId,
@@ -116,6 +118,8 @@ const OptimizeDelivery: React.FC = () => {
                     ? "#1D72C0"
                     : order.statusId === 9
                     ? "#4F970F"
+                    : order.statusId === 11
+                    ? "#000000"
                     : "#9A0E1D",
                 time: item.duration,
                 distanceToNextDestination: item.distanceFromPreviousDestination,
@@ -123,27 +127,28 @@ const OptimizeDelivery: React.FC = () => {
                 deliveredTime: order.deliveredTime,
                 assignedTime: order.assignedTime,
                 order: order,
-                address1: previousAddress,
-                address2: order.account.address,
+                address1: previousAddress || "Unknown Address", // Điểm từ là địa chỉ trước đó
+                address2:
+                  order.customerInfoAddress?.customerInfoAddressName ||
+                  "Unknown Address", // Điểm đến là địa chỉ của đơn hàng
               };
-              previousAddress = order.account.address || previousAddress;
+
+              // Cập nhật `previousAddress` cho lần lặp tiếp theo
+              previousAddress =
+                order.customerInfoAddress?.customerInfoAddressName ||
+                previousAddress;
+
               return delivery;
             });
           });
 
-          // Gom nhóm theo địa chỉ giao hàng
+          // Gom nhóm các đơn hàng theo địa chỉ
           const groupedDeliveries = Array.from(
-            mappedDeliveries.reduce((map, delivery) => {
-              const addressKey = delivery.order.account.address || "";
+            mappedDeliveries.reduce((map, delivery, index) => {
+              const addressKey = delivery.address2 || "";
               if (!map.has(addressKey)) {
                 map.set(addressKey, {
-                  point: String.fromCharCode(
-                    65 +
-                      (response.result.find((r) =>
-                        r.orders.some((o) => o.orderId === delivery.id)
-                      )?.index || 0) -
-                      1
-                  ),
+                  point: String.fromCharCode(65 + index), // A, B, C...
                   status: delivery.status,
                   color: delivery.color,
                   address1: delivery.address1,
@@ -155,7 +160,21 @@ const OptimizeDelivery: React.FC = () => {
                   orders: [delivery],
                 });
               } else {
-                map.get(addressKey)?.orders.push(delivery);
+                const group = map.get(addressKey);
+                group.orders.push(delivery);
+
+                // Kiểm tra trạng thái của tất cả các đơn hàng trong nhóm
+                const allSameStatus: boolean = group.orders.every(
+                  (order: Delivery) => order.status === group.orders[0].status
+                );
+
+                if (allSameStatus) {
+                  group.status = group.orders[0].status; // Lấy trạng thái đại diện nếu giống nhau
+                  group.color = group.orders[0].color; // Lấy màu tương ứng
+                } else {
+                  group.status = 11; // Gán trạng thái mặc định cho nhóm không đồng nhất
+                  group.color = "#00000"; // Màu trắng cho trạng thái 11
+                }
               }
               return map;
             }, new Map())
@@ -164,6 +183,7 @@ const OptimizeDelivery: React.FC = () => {
           setDeliveries(groupedDeliveries);
           cachedDeliveriesRef.current = groupedDeliveries;
           selectedOrdersRef.current = selectedOrders;
+
           showSuccessMessage("Fetched optimal path successfully.");
         } else {
           const errorMessage =
@@ -174,7 +194,6 @@ const OptimizeDelivery: React.FC = () => {
       } catch (err) {
         const errorMessage = "An error occurred while fetching data.";
         showErrorMessage(errorMessage);
-        setError(errorMessage);
         console.error("Failed to get optimal path:", err);
       } finally {
         setLoading(false);
@@ -332,6 +351,7 @@ const OptimizeDelivery: React.FC = () => {
                 key={delivery.point}
                 delivery={delivery}
                 setIsDelivering={setIsDelivering}
+                typeMap="optimal"
               />
             ))}
           </ScrollView>
